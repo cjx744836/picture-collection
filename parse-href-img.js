@@ -233,14 +233,16 @@ function parse(delay, prop) {
             imgs = imgs.concat(getImgProp(text, res.url, prop));
         }
         process.send({imgUrl: imgs, sUrl: res.url});
-        setTimeout(() => {
-            parse(delay, prop);
-        }, delay);
+        delayParse(delay, prop);
     }).catch(err => {
-        setTimeout(() => {
-            parse(delay, prop);
-        }, delay);
+        delayParse(delay, prop);
     });
+}
+
+function delayParse(delay, prop) {
+    setTimeout(() => {
+        parse(delay, prop);
+    }, delay);
 }
 
 process.on('message', arg => {

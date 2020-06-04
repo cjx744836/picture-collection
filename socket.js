@@ -21,7 +21,7 @@ ws.createServer(connection => {
         } else {
             imageURL = [];
             maps = [];
-            size = o.size * 1024 || 100 * 1024;
+            size = o.size * 1024 || 0;
             max_process = Number(o.process) || max_process;
             delay = o.delay || 0;
             createPhi(o.url, o.prop);
@@ -74,22 +74,21 @@ function request(connection, referer, i) {
         if(arg.err) {
             if(arg.code === 0) {
                 if(over) return childManager.kill(child);
-                return setTimeout(() => {
-                    send();
-                }, 5000);
+                return delaySend(3000);
             }
         } else if(maps.indexOf(arg.hash) === -1) {
             maps.push(arg.hash);
             connection.sendText(JSON.stringify({imgUrl: '/' + arg.filename, sUrl: arg.sUrl, size: arg.size}));
         }
+        delaySend(delay);
+    });
+    function delaySend(delay) {
         setTimeout(() => {
             send();
         }, delay);
-    });
+    }
     function send() {
         !killed && child.send({url: imageURL.pop(), size: size, referer})
     }
-    setTimeout(() => {
-        send();
-    }, delay * i);
+    delaySend(delay + i * 1000);
 }
