@@ -1,0 +1,17 @@
+{
+  "name": "picture-collection",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index"
+  },
+  "node_version": "14.2.0",
+  "author": "cc",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodejs-websocket": "^1.7.2"
+  }
+}

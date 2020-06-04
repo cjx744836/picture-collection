@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="no-referrer" name="referrer">
+    <title>获取指定网站的图片</title>
+    <link href="/viewer.min.css" rel="stylesheet" type="text/css">
+    <style>
+        html, body {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        * {
+            outline: 0;
+        }
+        .img {
+            display: flex;
+            margin-top: 48px;
+        }
+        .img > div {
+            padding: 5px;
+            font-size: 0;
+        }
+        .img img {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        [v-cloak] {
+            display: none;
+        }
+        .ops {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            left: 0;
+            background: #fff;
+            z-index: 3;
+        }
+        .ops  * {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        .ops input {
+            width: 500px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            padding: 5px;
+            outline: 0;
+        }
+        input:focus {
+            border: 1px solid #3da0ff;
+        }
+        button {
+            background: linear-gradient(180deg, #3da0ff, #1c608e 75%);
+            color: #fff;
+            border: 0;
+            padding: 5px 10px;
+            transition-duration: .1s;
+            border-radius: 5px;
+        }
+        button:active {
+            box-shadow: inset 0 6px 10px 0 #276e8a;
+            color: #e9eff1;
+        }
+        button.disabled {
+            cursor: not-allowed;
+            background: #e0e0e0;
+            color: #a2a2a2;
+        }
+        .viewer-backdrop {
+            background: rgba(0,0,0,0.95);
+        }
+        .img-inner {
+            position: relative;
+        }
+        .img-inner > a {
+            position: absolute;
+            right: 2px;
+            top: 2px;
+            display: inline-block;
+            font-size: 12px;
+            padding: 2px 5px;
+            border: 1px solid #666;
+            color: #666;
+            background: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+        }
+        span > i {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            line-height: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #b1b1b1;
+            color: #fff;
+            text-align: center;
+            border-radius: 50%;
+            font-style: normal;
+            margin: 0 3px;
+            cursor: default;
+        }
+        .tips {
+            background: #e9eff1;
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 3px;
+            position: fixed;
+            z-index: 5;
+        }
+        .message {
+            background: #e9eff1;
+            padding: 5px;
+            font-size: 14px;
+            border-radius: 3px;
+            position: fixed;
+            z-index: 5;
+            top: 10px;
+            left: 50%;
+        }
+        .slide-enter-active, .slide-leave-active {
+            transition-duration: 0.3s;
+        }
+        .slide-enter, .slide-leave-to {
+            opacity: 0;
+            margin-top: -10px;
+        }
+        .loading {
+            width: 15px;
+            height: 15px;
+            border: 5px solid #e9eff1;
+            border-radius: 50%;
+            position: relative;
+            animation: circle 2s linear infinite;
+            display: inline-block;
+        }
+        .loading:after {
+            display: inline-block;
+            content: '';
+            width: 15px;
+            height: 15px;
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            border-top: 5px solid #3da0ff;
+            border-bottom: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-left: 5px solid transparent;
+            border-radius: 50%;
+        }
+        @keyframes circle {
+            0% {transform: rotate(0)}
+            100% {transform: rotate(360deg)}
+        }
+    </style>
+</head>
+<body>
+    <div class="app" v-cloak>
+        <div class="ops">
+            <span>子进程数<i v-title="'适当提高数值，会提升抓取效率'">?</i></span><input type="text" style="width:50px" v-model.number="process">
+            <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:50px" v-model.number="delay">
+            <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:50px;" v-model.number="size"><span>KB</span>
+            <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop">
+            <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url">
+            <span v-if="ready">
+                <button @click="start" v-if="!disabled">开始</button>
+                <span v-if="disabled" class="loading"></span>
+                <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
+                <button @click="clear">清空服务器已下载的图片</button>
+                <button @click="sort">大小排序</button>
+            </span>
+            <span v-else>未就绪</span>
+            <span v-if="list.length">{{list.length}}</span>
+        </div>
+        <div class="img" v-viewer>
+            <div v-for="(k,i) in count" :style="{width: width}" :key="i">
+                <div v-for="p in arr[i]" class="img-inner">
+                    <img :src="p.imgUrl">
+                    <a :href="p.sUrl" target="_blank" @click.stop>{{formatSize(p.size)}}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/vue.min.js" type="text/javascript"></script>
+    <script src="/viewer.min.js" type="text/javascript"></script>
+    <script src="/v-viewer.min.js" type="text/javascript"></script>
+    <script>
+        let ws;
+        let message = Vue.extend({
+            template: `
+                <transition name="slide" @after-leave="remove">
+                    <div class="message" v-if="visible">{{mes}}</div>
+                </transition>
+           `,
+            data() {
+                return {
+                    visible: false
+                }
+            },
+            methods: {
+                remove() {
+                    this.$el.remove();
+                }
+            },
+            props: ['mes'],
+            mounted() {
+                document.body.appendChild(this.$el);
+                this.$nextTick(() => {
+                    this.visible = true;
+                    setTimeout(() => {
+                        this.visible = false;
+                    }, 2000);
+                });
+            }
+            });
+        let tips = Vue.extend({
+           template: `
+                <transition name="slide" @after-leave="remove">
+                    <div class="tips" v-if="visible" :style="{left:x+'px',top:y+'px'}">{{mes}}</div>
+                </transition>
+           `,
+           data() {
+               return {
+                   visible: false
+               }
+           },
+            methods: {
+               close() {
+                   this.visible = false;
+               },
+               remove() {
+                   this.$el.remove();
+               }
+            },
+           props: ['mes', 'x', 'y'],
+            mounted() {
+               document.body.appendChild(this.$el);
+               this.$nextTick(() => {
+                   this.visible = true;
+
+               });
+            }
+        });
+        Vue.directive('title', {
+           bind(el, binding) {
+               let vm;
+               el.addEventListener('mouseover', e => {
+                   vm  = new tips({propsData: {mes: binding.value, x: e.clientX + 10, y: e.clientY}}).$mount();
+               });
+               el.addEventListener('mouseout', e => {
+                   vm.close();
+               });
+           }
+        });
+        Vue.use(VueViewer.default, {
+            defaultOptions: {
+                navbar: false,
+                toolbar: false,
+                transition: false,
+                title: false
+            }
+        });
+        Vue.prototype.$message = function(mes) {
+          return new message({
+              propsData: {
+                  mes: mes
+              }
+          }).$mount();
+        };
+        let app = new Vue({
+            el: '.app',
+            data: {
+                url: '',
+                process: 8,
+                width: '',
+                arr: [],
+                count: 10,
+                delay: 3000,
+                ready: false,
+                disabled: false,
+                m_sort: false,
+                m_stop: false,
+                prop: '',
+                size: 100,
+                list: []
+            },
+            created() {
+                this.width = 100 / this.count + '%';
+                for(let i = 0; i < this.count; i++) {
+                    this.arr.push([]);
+                }
+            },
+            methods: {
+                sort() {
+                    if(this.m_sort) {
+                        this.list.sort((a, b) => {
+                            return a.size - b.size;
+                        });
+                    } else {
+                        this.list.sort((a, b) => {
+                            return b.size - a.size;
+                        });
+                    }
+                    this.arr = [];
+                    for(let i = 0; i < this.count; i++) {
+                        this.arr.push([]);
+                    }
+                    this.list.forEach((d, i) => {
+                        let n = i % this.count;
+                        this.arr[n].push(d);
+                    });
+                    this.m_sort = !this.m_sort;
+                },
+                formatSize(size) {
+                    let n = size / 1024 / 1024;
+                    if(n > 1) return n.toFixed(0) + 'MB';
+                    n = size / 1024;
+                    return n.toFixed(0) + 'KB';
+                },
+                clear() {
+                    fetch('/clear').then(res => {
+                        this.$message('清除成功')
+                    });
+                },
+                reset() {
+                    this.arr = [];
+                    this.list = [];
+                    this.m_stop = false;
+                    for(let i = 0; i < this.count; i++) {
+                        this.arr.push([]);
+                    }
+                },
+                start() {
+                    if(!/^https?:\/\//.test(this.url)) return this.$message('Invalid Url');
+                    this.reset();
+                    send({url: this.url, process: this.process, size: this.size, delay: this.delay, prop: this.prop});
+                    this.disabled = true;
+                },
+                add(url) {
+                    let n = this.list.length % this.count;
+                    this.arr[n].push(url);
+                    this.list.push(url);
+                },
+                stop() {
+                    this.m_stop = true;
+                    send({stop: 1});
+                }
+            },
+            mounted() {
+
+            }
+        });
+
+        function send(o) {
+            ws.send(JSON.stringify(o));
+        }
+        function connect() {
+            ws = new WebSocket('ws://127.0.0.1:3002');
+            ws.onopen = function() {
+                app.disabled = false;
+                app.ready = true;
+                console.log('connected');
+            };
+            ws.onmessage = function(data) {
+                let ob = JSON.parse(data.data);
+                if(ob.end) return app.disabled = false;
+                app.add(ob);
+            };
+            ws.onclose = function() {
+                app.ready = false;
+                setTimeout(function() {
+                    connect();
+                }, 5000);
+            };
+        }
+        connect();
+    </script>
+</body>
+</html>
