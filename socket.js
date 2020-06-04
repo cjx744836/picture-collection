@@ -13,10 +13,11 @@ ws.createServer(connection => {
     });
     connection.on('text', data => {
         let o = JSON.parse(data);
+        childManager.onOver(() => {
+            connection.sendText(JSON.stringify({end: 1}));
+        });
         if(o.stop) {
-            childManager.killAll(() => {
-                connection.sendText(JSON.stringify({end: 1}));
-            });
+            childManager.killAll();
         } else {
             imageURL = [];
             maps = [];

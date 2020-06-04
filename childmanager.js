@@ -7,6 +7,9 @@ class ChildManager {
     add(child) {
         this.childs.push(child);
     }
+    onOver(cb) {
+       this.cb = cb;
+    }
     kill(child) {
         this.count++;
         child.kill();
@@ -24,8 +27,7 @@ class ChildManager {
         this.childs = [];
         this.count = 0;
     }
-    killAll(cb) {
-        this.cb = cb;
+    killAll() {
         this.childs.forEach(child => {
            child.emit('kill');
         });
