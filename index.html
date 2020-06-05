@@ -33,6 +33,8 @@
             padding: 10px;
             border-bottom: 1px solid #eee;
             background: #fff;
+            transition-duration: 0.3s;
+            transition-delay: 1s;
         }
         .ops  * {
             vertical-align: middle;
@@ -156,6 +158,8 @@
             bottom: 0;
             width: 100%;
             background: rgba(255,255,255,0.9);
+            transition-duration: 0.3s;
+            transition-delay: 1s;
         }
         .page > span {
             background: linear-gradient(0, #eaeaea, #fff);
@@ -185,11 +189,25 @@
             border-radius: 5px;
             padding: 5px;
         }
+        .ops.full {
+            position: fixed;
+            z-index: 3;
+            transform: translateY(-100%);
+        }
+        .page.full {
+            z-index: 3;
+            transform: translateY(100%);
+        }
+        .ops.full.top, .page.full.top {
+            transition-delay: 0s;
+            transform: translateY(0);
+        }
+
     </style>
 </head>
 <body>
     <div class="app" v-cloak>
-        <div class="ops">
+        <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false">
             <span>子进程数<i v-title="'适当提高数值，会提升抓取效率'">?</i></span><input type="text" style="width:20px" v-model.number="process">
             <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay">
             <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size"><span>KB</span>
@@ -203,6 +221,7 @@
                 <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
                 <button @click="clear">清空服务器已下载的图片</button>
                 <button @click="sort">大小排序</button>
+                <button @click="fullScreen">{{isFullScreen?'退出全屏':'全屏'}}</button>
             </span>
             <span v-else>未就绪</span>
         </div>
@@ -214,7 +233,7 @@
                 </div>
             </div>
         </div>
-        <div class="page">
+        <div class="page" :class="{full:isFullScreen, top:isBottom}" @mouseleave="isBottom=false">
             <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :key="k" :class="{active:page===k}">{{k}}</span>
             <span class="total" v-if="list.length">共{{list.length}}个</span>
         </div>
@@ -319,6 +338,9 @@
                 disabled: false,
                 m_sort: false,
                 m_stop: false,
+                isFullScreen: false,
+                isTop: false,
+                isBottom: false,
                 pageList: [],
                 layoutR: '3',
                 layoutC: '5',
@@ -394,6 +416,10 @@
                 this.width = 100 / this.count + '%';
                 this.initArr();
                 document.addEventListener('keydown', e => {
+                    if(e.keyCode === 122) {
+                        e.preventDefault();
+                        this.fullScreen();
+                    }
                     if(this.$refs.viewer.$viewer.isShown) {
                         return e.stopPropagation();
                     }
@@ -408,8 +434,26 @@
                         }
                     }
                 });
+                document.addEventListener('mousemove', (e) => {
+                   if(e.clientY === 0 && this.isFullScreen && !this.isTop) {
+                        this.isTop = true;
+                   }
+                   if(e.clientY === window.innerHeight - 1 && this.isFullScreen && !this.isBottom) {
+                       this.isBottom = true;
+                   }
+                });
+                document.onfullscreenchange = () => {
+                  this.isFullScreen = !!document.fullscreenElement;
+                };
             },
             methods: {
+                fullScreen() {
+                    if(document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        document.documentElement.requestFullscreen();
+                    }
+                },
                 initArr() {
                     this.arr = [];
                     for(let i = 0; i < this.count; i++) {
