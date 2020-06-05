@@ -1,21 +1,4 @@
-const http = require('http');
-const https = require('https');
-let reqTIMEOUT = 3000;
-const resTIMEOUT = 10000;
-const fs = require('fs');
-let rawData = Buffer.alloc(0);
-let options = {
-    method: 'get',
-    headers: {
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36',
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'
-    }
-};
-let adapter, req;
-
-function isHttps(host) {
-    return /^https/.test(host);
-}
+const request = require('./request');
 
 function parseURL(url) {
     let o = new URL(url), b = {};
@@ -58,7 +41,10 @@ function parseHTML(html, tag, attr) {
                 if(s === 0) {
                     s = 1;
                     str = '';
-                } else if(s === 3 || s === 4 || s === 5 || s === 6) {
+                } else if(s === 4 || s === 5 || s === 6) {
+                    str += char;
+                } else if(s === 3) {
+                    s = 6;
                     str += char;
                 }
                 break;
@@ -74,31 +60,25 @@ function parseHTML(html, tag, attr) {
                 break;
             case ` `:
                 if(s === 1) {
-                    if(str.toLowerCase() === tag.toLowerCase()) {
-                        s = 2;
-                    } else {
-                        s = 0;
-                    }
+                    s = str.toLowerCase() === tag.toLowerCase() ? 2 : 0;
                     str = '';
-                } else if(s === 2 && str === attr) {
-                    s = 3;
+                } else if(s === 2 && str.toLowerCase() !== attr.toLowerCase()) {
                     str = '';
                 } else if(s === 6) {
                     put();
                 } else if(s === 4 || s === 5) {
                     str += char;
-                } else {
-                    str = '';
                 }
                 break;
             case `=`:
-                if(s === 2 && str === attr) {
+                if(s === 2 && str.toLowerCase() === attr.toLowerCase()) {
                     s = 3;
                     str = '';
-                } else if(s === 3 || s === 4 || s === 5 || s === 6) {
+                } else if(s === 4 || s === 5 || s === 6) {
                     str += char;
-                } else {
-                    str = '';
+                } else if(s === 3) {
+                    s = 6;
+                    str += char;
                 }
                 break;
             case `'`:
@@ -132,7 +112,6 @@ function parseHTML(html, tag, attr) {
     return c;
 }
 
-
 function getHref(html, url) {
     return parsePath(parseHTML(html, 'a', 'href'), parseURL(url));
 }
@@ -143,68 +122,6 @@ function getImg(html, url) {
 
 function getImgProp(html, url, prop) {
     return parsePath(parseHTML(html, 'img', prop), parseURL(url));
-}
-
-function get(url, options) {
-    return new Promise((resolve, reject) => {
-        let tid = 0;
-        adapter = isHttps(url) ? https : http;
-        rawData = Buffer.alloc(0);
-        req = adapter.request(url, options, function(res) {
-            clearTimeout(tid);
-            let resId = 0;
-            let code = res.statusCode;
-            if(code >= 300 && code < 400) {
-                if(res.headers.location) {
-                    options.credirect = options.credirect ? options.credirect + 1 : 1;
-                    if(options.credirect > 5) {
-                        return reject(new Error(`Redirect Max`));
-                    }
-                    if(res.headers.location.indexOf('http') > -1) {
-                        url = res.headers.location;
-                    } else {
-                        return reject(new Error('Invalid URL'));
-                    }
-                    return get(url, options).then(res => resolve(res)).catch(err => reject(err));
-                } else {
-                    return reject(new Error(`Redirect Failed`));
-                }
-            } else {
-                if(code === 200) {
-                    rawData = Buffer.alloc(0);
-                    resId = setTimeout(() => {
-                        res.destroy();
-                        rawData = undefined;
-                        reject(new Error('Response Timeout'));
-                    }, resTIMEOUT);
-                    let m;
-                    res.on('data', chunk => {
-                        rawData = Buffer.concat([rawData, chunk], rawData.length + chunk.length);
-                    });
-                    res.on('end', () => {
-                        clearTimeout(resId);
-                        resolve({data: rawData, url: url, type: res.headers['content-type']});
-                        rawData = undefined;
-                    });
-                    res.on('error', e => {
-                        if(res.destroyed) return;
-                        reject(e);
-                    });
-                } else {
-                    reject(new Error(`Not Found`));
-                }
-            }
-        });
-        tid = setTimeout(() => {
-            req.destroy();
-            reject(new Error(`Request Timeout`));
-        }, reqTIMEOUT);
-        req.on('error', (e) => {
-            if(req.destroyed) return;
-            reject(e);
-        });
-        req.end();
-    });
 }
 
 let urls = [];
@@ -223,8 +140,7 @@ function add(u) {
 function parse(delay, prop) {
     if(index === urls.length) return process.send({over: 1});
     let url = urls[index++];
-    options.credirect = 0;
-    get(url, options).then(res => {
+    request(url).then(res => {
         let text = res.data.toString();
         let imgs = [];
         add(getHref(text, res.url));

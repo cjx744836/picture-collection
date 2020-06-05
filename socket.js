@@ -24,10 +24,10 @@ ws.createServer(connection => {
             size = o.size * 1024 || 0;
             max_process = Number(o.process) || max_process;
             delay = o.delay || 0;
-            createPhi(o.url, o.prop);
+            createParser(o.url, o.prop);
             let url = new URL(o.url);
             for(let i = 0; i < max_process; i++) {
-                request(connection, url.protocol + '//' + url.hostname, i);
+                createImageCollection(connection, url.protocol + '//' + url.hostname, i);
             }
         }
     });
@@ -39,8 +39,8 @@ ws.createServer(connection => {
     });
 }).listen(port);
 
-function createPhi(url, prop) {
-    let child = fork('./parse-href-img.js', {windowsHide: true});
+function createParser(url, prop) {
+    let child = fork('./parser.js', {windowsHide: true});
     child.send({url, delay, prop});
     childManager.add(child);
     child.once('kill', () => {
@@ -59,8 +59,8 @@ function createPhi(url, prop) {
     });
 }
 
-function request(connection, referer, i) {
-    let child = fork('./request.js', {windowsHide: true});
+function createImageCollection(connection, referer, i) {
+    let child = fork('./collection.js', {windowsHide: true});
     let killed = false, over = false;
     childManager.add(child);
     child.once('kill', () => {

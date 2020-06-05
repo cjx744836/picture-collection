@@ -2,9 +2,6 @@ const http = require('http');
 const https = require('https');
 let reqTIMEOUT = 5000;
 const resTIMEOUT = 10000;
-const fs = require('fs');
-let rawData = Buffer.alloc(0);
-const crypto = require('crypto');
 
 let options = {
     method: 'get',
@@ -13,6 +10,7 @@ let options = {
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'
     }
 };
+let redirect_count = 0;
 let adapter, req;
 
 function isHttps(host) {
@@ -29,8 +27,8 @@ function get(url, options) {
             let code = res.statusCode;
             if(code >= 300 && code < 400) {
                 if(res.headers.location) {
-                    options.credirect = options.credirect ? options.credirect + 1 : 1;
-                    if(options.credirect > 5) {
+                    redirect_count++;
+                    if(redirect_count > 5) {
                         return reject(new Error(`Redirect Max ${url}`));
                     }
                     if(res.headers.location.indexOf('http') > -1) {
@@ -79,39 +77,11 @@ function get(url, options) {
     });
 }
 
-function genHash(data) {
-    return crypto.createHash('sha1').update(data).digest().toString('hex');
-}
-
-function isValidType(type) {
-    return /image/i.test(type);
-}
-
-function getType(type) {
-    if(type.indexOf('jpeg') > -1) return '.jpg';
-    if(type.indexOf('gif') > -1) return '.gif';
-    if(type.indexOf('png') > -1) return '.png';
-    if(type.indexOf('svg') > -1) return '.svg';
-    if(type.indexOf('webp') > -1) return '.webp';
-    return '.jpg';
-}
 
 
+module.exports = function(url, ops) {
+    redirect_count = 0;
+    ops = Object.assign(options, ops);
+    return get(url, ops);
+};
 
-process.on('message', arg => {
-   if(!arg.url) return process.send({err: `No Url`, code: 0});
-   options.headers.referer = arg.referer;
-   options.credirect = 0;
-   get(arg.url.imgUrl, options).then(res => {
-        if(res.data.length > arg.size && isValidType(res.type)) {
-            let hash = genHash(res.data);
-            let ext = getType(res.type);
-            fs.writeFileSync(__dirname + '/img/' + hash + ext, res.data);
-            process.send({url: res.url, hash: hash, filename: hash + ext, sUrl: arg.url.sUrl, size: res.data.length});
-        } else {
-            process.send({err: `File Size Or Type Error ${res.url}`});
-        }
-   }).catch(err => {
-      process.send({err: err.message});
-   });
-});
