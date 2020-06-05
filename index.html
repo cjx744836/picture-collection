@@ -16,7 +16,7 @@
         }
         .img {
             display: flex;
-            margin-top: 48px;
+            margin-bottom: 30px;
         }
         .img > div {
             padding: 5px;
@@ -32,19 +32,14 @@
         .ops {
             padding: 10px;
             border-bottom: 1px solid #eee;
-            position: fixed;
-            top: 0;
-            width: 100%;
-            left: 0;
             background: #fff;
-            z-index: 3;
         }
         .ops  * {
             vertical-align: middle;
             margin-right: 5px;
         }
         .ops input {
-            width: 500px;
+            width: 400px;
             border-radius: 5px;
             border: 1px solid #ccc;
             padding: 5px;
@@ -157,6 +152,10 @@
         }
         .page {
             text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(255,255,255,0.9);
         }
         .page > span {
             background: linear-gradient(0, #eaeaea, #fff);
@@ -195,7 +194,7 @@
             <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay">
             <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size"><span>KB</span>
             <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop">
-            <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layout"><option v-for="k in layoutList" :value="k.value">{{k.name}}</option></select>
+            <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR"><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC"><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
             <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager"><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
             <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url">
             <span v-if="ready">
@@ -207,7 +206,7 @@
             </span>
             <span v-else>未就绪</span>
         </div>
-        <div class="img" v-viewer>
+        <div class="img" v-viewer ref="viewer">
             <div v-for="(k,i) in count" :style="{width: width}" :key="i">
                 <div v-for="p in arr[i]" class="img-inner">
                     <img :src="p.imgUrl">
@@ -321,17 +320,31 @@
                 m_sort: false,
                 m_stop: false,
                 pageList: [],
-                layout: '1',
-                layoutList: [
-                    {name: '3行10列',  value: '1', r: 3,  c: 10},
-                    {name: '5行10列',  value: '2', r: 5,  c: 10},
-                    {name: '10行10列', value: '3', r: 10, c: 10},
-                    {name: '3行5列',   value: '4', r: 3,  c: 5},
-                    {name: '5行5列',   value: '5', r: 5,  c: 5},
-                    {name: '10行5列',  value: '6', r: 10, c: 5},
-                    {name: '3行3列',   value: '7', r: 3,  c: 3},
-                    {name: '5行3列',   value: '8', r: 5,  c: 3},
-                    {name: '10行3列',  value: '9', r: 10, c: 3},
+                layoutR: '3',
+                layoutC: '5',
+                layoutListR: [
+                    {name: '1行',  value: '1'},
+                    {name: '2行',  value: '2'},
+                    {name: '3行',  value: '3'},
+                    {name: '4行',  value: '4'},
+                    {name: '5行',  value: '5'},
+                    {name: '6行',  value: '6'},
+                    {name: '7行',  value: '7'},
+                    {name: '8行',  value: '8'},
+                    {name: '9行',  value: '9'},
+                    {name: '10行',  value: '10'},
+                ],
+                layoutListC: [
+                    {name: '1列',  value: '1'},
+                    {name: '2列',  value: '2'},
+                    {name: '3列',  value: '3'},
+                    {name: '4列',  value: '4'},
+                    {name: '5列',  value: '5'},
+                    {name: '6列',  value: '6'},
+                    {name: '7列',  value: '7'},
+                    {name: '8列',  value: '8'},
+                    {name: '9列',  value: '9'},
+                    {name: '10列',  value: '10'},
                 ],
                 pager: '1',
                 pageContent: [
@@ -355,26 +368,46 @@
                         this.genPage();
                     }
                 },
-                layout(v) {
-                    for(let it of this.layoutList) {
-                        if(it.value === v) {
-                            v = it;
-                            break;
-                        }
-                    }
-                    this.count = v.c;
-                    this.row_count = v.r;
+                layoutC(v) {
+                    this.count = Number(v);
                     this.width = 100 / this.count + '%';
                     this.page = 1;
                     this.genArr();
+                    this.last = Math.ceil(this.list.length / (this.count * this.row_count));
+                    if(this.last > 1) {
+                        this.genPage();
+                    }
+                },
+                layoutR(v) {
+                    this.row_count = Number(v);
+                    this.page = 1;
+                    this.genArr();
+                    this.last = Math.ceil(this.list.length / (this.count * this.row_count));
                     if(this.last > 1) {
                         this.genPage();
                     }
                 }
             },
             created() {
+                this.count = Number(this.layoutC);
+                this.row_count = Number(this.layoutR);
                 this.width = 100 / this.count + '%';
                 this.initArr();
+                document.addEventListener('keydown', e => {
+                    if(this.$refs.viewer.$viewer.isShown) {
+                        return e.stopPropagation();
+                    }
+                    if(this.pager === '1') {
+                        switch (e.keyCode) {
+                            case 37:
+                                this.pageTo(this.page - 1);
+                                break;
+                            case 39:
+                                this.pageTo(this.page + 1);
+                                break;
+                        }
+                    }
+                });
             },
             methods: {
                 initArr() {
@@ -433,7 +466,6 @@
                     }
                 },
                 pageTo(page, i) {
-                    if(page === this.page) return;
                     if(page === '...') {
                         if(i === 1) {
                             page = this.page - 7 > 0 ? this.page - 7 : 1;
@@ -441,6 +473,9 @@
                             page = this.page + 7 > this.last ? this.last : this.page + 7;
                         }
                     }
+                    if(page < 1) page = 1;
+                    else if(page > this.last - 1) page = this.last;
+                    if(page === this.page) return;
                     this.page = page;
                     this.genArr();
                     this.genPage();
