@@ -41,7 +41,7 @@
             margin-right: 5px;
         }
         .ops input {
-            width: 400px;
+            width: 300px;
             border-radius: 5px;
             border: 1px solid #ccc;
             padding: 5px;
@@ -87,9 +87,9 @@
         }
         span > i {
             display: inline-block;
-            width: 15px;
-            height: 15px;
-            line-height: 15px;
+            width: 13px;
+            height: 13px;
+            line-height: 13px;
             font-size: 12px;
             font-weight: bold;
             background: #b1b1b1;
@@ -109,8 +109,9 @@
             z-index: 5;
         }
         .message {
-            background: #e9eff1;
+            background: #3da0ff;
             padding: 5px;
+            color: #fff;
             font-size: 14px;
             border-radius: 3px;
             position: fixed;
@@ -192,6 +193,7 @@
         .ops.full {
             position: fixed;
             z-index: 3;
+            width: 100%;
             transform: translateY(-100%);
         }
         .page.full {
@@ -202,11 +204,14 @@
             transition-delay: 0s;
             transform: translateY(0);
         }
-
+        .app.full {
+            background: #000;
+            min-height: 100vh;
+        }
     </style>
 </head>
 <body>
-    <div class="app" v-cloak>
+    <div class="app" v-cloak :class="{full:isFullScreen}">
         <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false">
             <span>子进程数<i v-title="'适当提高数值，会提升抓取效率'">?</i></span><input type="text" style="width:20px" v-model.number="process">
             <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay">
@@ -214,6 +219,7 @@
             <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop">
             <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR"><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC"><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
             <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager"><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
+            <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer"><option value="1">开启</option><option value="2">关闭</option></select>
             <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url">
             <span v-if="ready">
                 <button @click="start" v-if="!disabled">开始</button>
@@ -302,7 +308,7 @@
            bind(el, binding) {
                let vm;
                el.addEventListener('mouseover', e => {
-                   vm  = new tips({propsData: {mes: binding.value, x: e.clientX + 10, y: e.clientY}}).$mount();
+                   vm  = new tips({propsData: {mes: binding.value, x: e.clientX, y: e.clientY + 30}}).$mount();
                });
                el.addEventListener('mouseout', e => {
                    vm.close();
@@ -341,6 +347,7 @@
                 isFullScreen: false,
                 isTop: false,
                 isBottom: false,
+                referer: '1',
                 pageList: [],
                 layoutR: '3',
                 layoutC: '5',
@@ -391,23 +398,15 @@
                     }
                 },
                 layoutC(v) {
+                    let pageSize = this.page * this.count * this.row_count;
                     this.count = Number(v);
                     this.width = 100 / this.count + '%';
-                    this.page = 1;
-                    this.genArr();
-                    this.last = Math.ceil(this.list.length / (this.count * this.row_count));
-                    if(this.last > 1) {
-                        this.genPage();
-                    }
+                    this.reCalc(pageSize);
                 },
                 layoutR(v) {
+                    let pageSize = this.page * this.count * this.row_count;
                     this.row_count = Number(v);
-                    this.page = 1;
-                    this.genArr();
-                    this.last = Math.ceil(this.list.length / (this.count * this.row_count));
-                    if(this.last > 1) {
-                        this.genPage();
-                    }
+                    this.reCalc(pageSize);
                 }
             },
             created() {
@@ -447,6 +446,15 @@
                 };
             },
             methods: {
+                reCalc(pageSize) {
+                    this.last = Math.ceil(this.list.length / (this.count * this.row_count));
+                    if(pageSize > this.list.length) pageSize = this.list.length;
+                    this.page = Math.ceil(pageSize / (this.count * this.row_count));
+                    this.genArr();
+                    if(this.last > 1) {
+                        this.genPage();
+                    }
+                },
                 fullScreen() {
                     if(document.fullscreenElement) {
                         document.exitFullscreen();
@@ -549,7 +557,7 @@
                 start() {
                     if(!/^https?:\/\//.test(this.url)) return this.$message('Invalid Url');
                     this.reset();
-                    send({url: this.url, process: this.process, size: this.size, delay: this.delay, prop: this.prop});
+                    send({url: this.url, process: this.process, size: this.size, delay: this.delay, prop: this.prop, referer: this.referer === '1' ? 1 : 0});
                     this.disabled = true;
                 },
                 add(url) {

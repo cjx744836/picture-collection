@@ -21,11 +21,14 @@ function getType(type) {
 
 process.on('message', arg => {
    if(!arg.url) return process.send({err: `No Url`, code: 0});
-   let ops = {
+   let ops = {};
+   if(arg.openReferer) {
+       ops = {
            headers: {
                referer: arg.referer
            }
-       };
+       }
+   };
    request(arg.url.imgUrl, ops).then(res => {
         if(res.data.length > arg.size && isValidType(res.type)) {
             let hash = genHash(res.data);

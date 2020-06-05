@@ -27,7 +27,7 @@ ws.createServer(connection => {
             createParser(o.url, o.prop);
             let url = new URL(o.url);
             for(let i = 0; i < max_process; i++) {
-                createImageCollection(connection, url.protocol + '//' + url.hostname, i);
+                createImageCollection(connection, url.protocol + '//' + url.hostname, i, o.referer);
             }
         }
     });
@@ -59,7 +59,7 @@ function createParser(url, prop) {
     });
 }
 
-function createImageCollection(connection, referer, i) {
+function createImageCollection(connection, referer, i, openReferer) {
     let child = fork('./collection.js', {windowsHide: true});
     let killed = false, over = false;
     childManager.add(child);
@@ -88,7 +88,7 @@ function createImageCollection(connection, referer, i) {
         }, delay);
     }
     function send() {
-        !killed && child.send({url: imageURL.pop(), size: size, referer})
+        !killed && child.send({url: imageURL.pop(), size: size, referer, openReferer})
     }
     delaySend(delay + i * 1000);
 }
