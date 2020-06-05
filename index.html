@@ -217,9 +217,9 @@
             <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay">
             <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size"><span>KB</span>
             <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop">
-            <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR"><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC"><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
-            <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager"><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
-            <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer"><option value="1">开启</option><option value="2">关闭</option></select>
+            <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR" @keydown.prevent><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC" @keydown.prevent><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
+            <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
+            <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer" @keydown.prevent><option value="1">开启</option><option value="2">关闭</option></select>
             <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url">
             <span v-if="ready">
                 <button @click="start" v-if="!disabled">开始</button>
@@ -449,7 +449,7 @@
                 reCalc(pageSize) {
                     this.last = Math.ceil(this.list.length / (this.count * this.row_count));
                     if(pageSize > this.list.length) pageSize = this.list.length;
-                    this.page = Math.ceil(pageSize / (this.count * this.row_count));
+                    this.page = Math.ceil(pageSize / (this.count * this.row_count)) || 1;
                     this.genArr();
                     if(this.last > 1) {
                         this.genPage();
