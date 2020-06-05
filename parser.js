@@ -1,25 +1,10 @@
 const request = require('./request');
 
-function parseURL(url) {
-    let o = new URL(url), b = {};
-    b.root = o.protocol + '//' + o.host;
-    b.protocol = o.protocol;
-    let c = o.pathname.split('/');
-    if(c[c.length - 1] !== '') {
-        c.pop();
-    }
-    b.relative = b.root + ((c.length > 0 ) ? c.join('/') : '/');
-    return b;
-}
-
 function parsePath(c, url) {
     let d = [];
     for(let it of c) {
-        if(it === '/' || /^(#|javascript)/i.test(it)) continue;
-        if(/^http/i.test(it)) d.push(it);
-        else if(/^\/\//.test(it)) d.push(url.protocol + it);
-        else if(/^\//.test(it)) d.push(url.root + it);
-        else d.push(url.relative + it);
+        if(/^(#|javascript)/i.test(it)) continue;
+        else d.push(new URL(it, url).href);
     }
     return d;
 }
@@ -112,26 +97,30 @@ function parseHTML(html, tag, attr) {
     return c;
 }
 
+function getBase(html) {
+    return parseHTML(html, 'base', 'href');
+}
+
 function getHref(html, url) {
-    return parsePath(parseHTML(html, 'a', 'href'), parseURL(url));
+    return parsePath(parseHTML(html, 'a', 'href'), url);
 }
 
 function getImg(html, url) {
-    return parsePath(parseHTML(html, 'img', 'src'), parseURL(url));
+    return parsePath(parseHTML(html, 'img', 'src'), url);
 }
 
 function getImgProp(html, url, prop) {
-    return parsePath(parseHTML(html, 'img', prop), parseURL(url));
+    return parsePath(parseHTML(html, 'img', prop), url);
 }
 
 let urls = [];
 let index = 0;
 const MAX = 100000;
 
-function add(u) {
+function add(u, url) {
     if(urls.length > MAX) return;
     u.forEach(d => {
-        if(urls.indexOf(d) === -1) {
+        if(urls.indexOf(d) === -1 && url.host === new URL(d).host) {
             urls.push(d);
         }
     });
@@ -143,7 +132,11 @@ function parse(delay, prop) {
     request(url).then(res => {
         let text = res.data.toString();
         let imgs = [];
-        add(getHref(text, res.url));
+        let base = getBase(text);
+        if(base.length) {
+            res.url = new URL(base[0], res.url).href;
+        }
+        add(getHref(text, res.url), new URL(res.url));
         imgs = imgs.concat(getImg(text, res.url));
         if(prop) {
             imgs = imgs.concat(getImgProp(text, res.url, prop));
