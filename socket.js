@@ -6,14 +6,20 @@ const path = require('path');
 const port = 3002;
 let imageURL = [], size;
 let max_process = 8;
-let maps = [];
 let delay = 0;
 let index = 0;
-const max_length = 100000;
+const MAX = 100000;
+let one = false;
 
 ws.createServer(connection => {
-    connection.on('connect', code => {
-
+    if(one) {
+        connection.on('error', err => {});
+        connection.sendText(JSON.stringify({err: '只可以连接一个', once: 1}));
+        return connection.close();
+    }
+    one = true;
+    connection.on('error', err => {
+        childManager.killAll();
     });
     connection.on('text', data => {
         let o = JSON.parse(data);
@@ -22,10 +28,8 @@ ws.createServer(connection => {
         } else {
             childManager.onOver(() => {
                 connection.sendText(JSON.stringify({end: 1}));
+                reset();
             });
-            imageURL = [];
-            maps = [];
-            index = 0;
             size = o.size * 1024 || 0;
             max_process = Number(o.process) || max_process;
             delay = o.delay || 0;
@@ -40,13 +44,17 @@ ws.createServer(connection => {
             }
         }
     });
-    connection.on('error', err => {
-        childManager.killAll();
-    });
     connection.on('close', code => {
-
+       one = false;
     });
 }).listen(port);
+
+function reset() {
+    imageURL = [];
+    index = 0;
+    delay = 0;
+    max_process = 8;
+}
 
 function createParser(url, prop, connection) {
     let child = fork('./parser.js', {windowsHide: true});
@@ -67,14 +75,14 @@ function createParser(url, prop, connection) {
         }
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
-                imageURL.length < max_length && imageURL.push({imgUrl: d, sUrl: arg.sUrl});
+                imageURL.length < MAX && imageURL.push({imgUrl: d, sUrl: arg.sUrl});
             }
         });
     });
 }
 
 function getImageURL() {
-    if(index === max_length) return childManager.killAll();
+    if(index === MAX) return childManager.killAll();
     if(imageURL[index]) return imageURL[index++];
     return '';
 }
@@ -96,8 +104,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
                 if(over) return childManager.kill(child);
                 return delaySend(3000);
             }
-        } else if(maps.indexOf(arg.hash) === -1) {
-            maps.push(arg.hash);
+        } else {
             connection.sendText(JSON.stringify({imgUrl: '/' + arg.filename, sUrl: arg.sUrl, size: arg.size}));
         }
         delaySend(delay);

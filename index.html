@@ -13,10 +13,10 @@
         }
         html {
             overflow: hidden;
+            height: 100vh;
         }
         body {
-            overflow: auto;
-            height: 100vh;
+            overflow: visible;
         }
         * {
             outline: 0;
@@ -218,19 +218,22 @@
             background: #000;
             min-height: 100vh;
         }
+        span {
+            user-select: none;
+        }
     </style>
 </head>
 <body>
     <div class="app" v-cloak :class="{full:isFullScreen}">
         <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false" ref="ops">
-            <span>子进程数<i v-title="'适当提高数值，会提升抓取效率'">?</i></span><input type="text" style="width:20px" v-model.number="process">
-            <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay">
-            <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size"><span>KB</span>
-            <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop">
+            <span>下载进程<i v-title="'图片下载进程，适当提高数值，会提升抓取效率，不是越高越好'">?</i></span><input type="text" style="width:20px" v-model.number="process" @click="selAll" @keydown.stop>
+            <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay" @click="selAll" @keydown.stop>
+            <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size" @click="selAll" @keydown.stop><span>KB</span>
+            <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop" @click="selAll" @keydown.stop>
             <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR" @keydown.prevent><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC" @keydown.prevent><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
             <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
-            <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer" @keydown.prevent><option value="1">开启</option><option value="2">关闭</option></select>
-            <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url">
+            <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</select>
+            <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
             <span v-if="ready">
                 <button @click="start" v-if="!disabled">开始</button>
                 <span v-if="disabled" class="loading"></span>
@@ -240,7 +243,7 @@
                 <button @click="sort">大小排序</button>
                 <button @click="fullScreen">{{isFullScreen?'退出全屏':'全屏'}}</button>
             </span>
-            <span v-else>未就绪</span>
+            <span v-else>{{errMes}}</span>
         </div>
         <div class="img" v-viewer ref="viewer">
             <div v-for="(k,i) in count" :style="{width: width}" :key="i">
@@ -350,7 +353,6 @@
                 arr: [],
                 count: 10,
                 row_count: 3,
-                barWidth: getBarWidth().h,
                 delay: 1000,
                 ready: false,
                 disabled: false,
@@ -362,6 +364,7 @@
                 referer: '1',
                 pageList: [],
                 layoutR: '3',
+                errMes: '服务器未启动',
                 layoutC: '5',
                 layoutListR: [
                     {name: '1行',  value: '1'},
@@ -389,8 +392,8 @@
                 ],
                 pager: '1',
                 pageContent: [
-                    {name: '开启', value: '1'},
-                    {name: '关闭', value: '2'}
+                    {name: '开', value: '1'},
+                    {name: '关', value: '2'}
                 ],
                 page: 1,
                 last: 1,
@@ -426,6 +429,9 @@
                 this.row_count = Number(this.layoutR);
                 this.width = 100 / this.count + '%';
                 this.initArr();
+                document.addEventListener('mousewheel', e => {
+                   this.scrollTop(e.deltaY)
+                });
                 document.addEventListener('keydown', e => {
                     if(e.keyCode === 122) {
                         e.preventDefault();
@@ -438,6 +444,12 @@
                                 break;
                             case 39:
                                 this.pageTo(this.page + 1);
+                                break;
+                            case 38:
+                                this.scrollTop(-40);
+                                break;
+                            case 40:
+                                this.scrollTop(40);
                                 break;
                         }
                     }
@@ -455,6 +467,9 @@
                 };
             },
             methods: {
+                scrollTop(m) {
+                    document.documentElement.scroll(0, document.documentElement.scrollTop + m);
+                },
                 reCalc(pageSize) {
                     this.last = Math.ceil(this.list.length / (this.count * this.row_count));
                     if(pageSize > this.list.length) pageSize = this.list.length;
@@ -536,7 +551,6 @@
                             this.arr[n].push(d);
                         });
                     }
-                    this.calcBar();
                 },
                 pageTo(page, i) {
                     if(page === '...') {
@@ -595,36 +609,22 @@
                         this.last = c;
                         this.genPage();
                     }
-                    this.calcBar();
-                },
-                calcBar() {
-                    this.$nextTick(() => {
-                        document.body.style.marginRight = document.body.offsetHeight !== document.body.scrollHeight ? -this.barWidth + 'px' : 0;
-                    });
                 },
                 stop() {
                     this.m_stop = true;
                     send({stop: 1});
+                },
+                selAll(e) {
+                    e.target.select();
                 }
             },
             mounted() {
             }
         });
-
-        function getBarWidth() {
-            let d = document.createElement('div');
-            let c = document.createElement('div');
-            d.style.cssText = `width:100px;height:100px;overflow:auto;`;
-            c.style.cssText = `width:200px;height:200px;`;
-            d.appendChild(c);
-            document.body.appendChild(d);
-            let o = {h: 100 - d.clientWidth, v: 100 - d.clientHeight};
-            d.remove();
-            return o;
-        }
         function send(o) {
             ws.send(JSON.stringify(o));
         }
+        let once = false;
         function connect() {
             ws = new WebSocket('ws://127.0.0.1:3002');
             ws.onopen = function() {
@@ -635,12 +635,18 @@
             ws.onmessage = function(data) {
                 let ob = JSON.parse(data.data);
                 if(ob.end) return app.disabled = false;
-                if(ob.err) return app.$message(ob.err);
+                if(ob.err) {
+                    if(ob.once) {
+                        once = true;
+                        app.errMes = ob.err;
+                    }
+                    return app.$message(ob.err);
+                }
                 app.add(ob);
             };
             ws.onclose = function() {
                 app.ready = false;
-                setTimeout(function() {
+                !once && setTimeout(function() {
                     connect();
                 }, 5000);
             };
