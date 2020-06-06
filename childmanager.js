@@ -2,20 +2,20 @@ class ChildManager {
     constructor() {
         this.childs = [];
         this.count = 0;
-        this.cb = null;
+        this.cb = [];
     }
     add(child) {
         this.childs.push(child);
     }
     onOver(cb) {
-       this.cb = cb;
+       typeof cb === 'function' && this.cb.push(cb);
     }
     kill(child) {
         this.count++;
         child.kill();
         if(this.count >= this.childs.length) {
+            this.cb.forEach(cb => cb());
             this.clear();
-            typeof this.cb === 'function' && this.cb();
         }
     }
     over() {
@@ -25,6 +25,7 @@ class ChildManager {
     }
     clear() {
         this.childs = [];
+        this.cb = [];
         this.count = 0;
     }
     killAll() {

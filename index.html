@@ -51,7 +51,7 @@
             margin-right: 5px;
         }
         .ops input {
-            width: 300px;
+            width: 250px;
             border-radius: 5px;
             border: 1px solid #ccc;
             padding: 5px;
@@ -235,7 +235,8 @@
                 <button @click="start" v-if="!disabled">开始</button>
                 <span v-if="disabled" class="loading"></span>
                 <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
-                <button @click="clear">清空服务器已下载的图片</button>
+                <button @click="clear(0)">删除图片</button>
+                <button @click="clear(1)">删除图片和文件夹</button>
                 <button @click="sort">大小排序</button>
                 <button @click="fullScreen">{{isFullScreen?'退出全屏':'全屏'}}</button>
             </span>
@@ -282,7 +283,7 @@
                     this.visible = true;
                     setTimeout(() => {
                         this.visible = false;
-                    }, 2000);
+                    }, 3000);
                 });
             }
             });
@@ -493,10 +494,23 @@
                     n = size / 1024;
                     return n.toFixed(0) + 'KB';
                 },
-                clear() {
-                    fetch('/clear').then(res => {
-                        this.$message('清除成功')
-                    });
+                clear(s) {
+                    let url = '/clear';
+                    let c = [];
+                    if(s) c.push('s=1');
+                    let mes = '';
+                    if(this.url) {
+                        mes = '【填写了网址，将删除当前网站采集的图片】';
+                        c.push('url=' + this.url);
+                        url += '?' + c.join('&');
+                    } else {
+                        mes = '【未填写网址，将删除所有网站采集的图片】';
+                    }
+                    if(confirm(mes)) {
+                        fetch(url).then(res => {
+                            res.text().then(res => this.$message(res));
+                        });
+                    }
                 },
                 reset() {
                     this.arr = [];
@@ -585,11 +599,7 @@
                 },
                 calcBar() {
                     this.$nextTick(() => {
-                       if(document.body.offsetHeight < document.body.scrollHeight) {
-                           document.body.style.marginRight = -this.barWidth + 'px';
-                       } else {
-                           document.body.style.marginRight = 0;
-                       }
+                        document.body.style.marginRight = document.body.offsetHeight !== document.body.scrollHeight ? -this.barWidth + 'px' : 0;
                     });
                 },
                 stop() {
@@ -625,6 +635,7 @@
             ws.onmessage = function(data) {
                 let ob = JSON.parse(data.data);
                 if(ob.end) return app.disabled = false;
+                if(ob.err) return app.$message(ob.err);
                 app.add(ob);
             };
             ws.onclose = function() {

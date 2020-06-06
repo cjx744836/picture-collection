@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const request = require('./request');
 const fs = require('fs');
+const path = require('path');
 
 function genHash(data) {
     return crypto.createHash('sha1').update(data).digest().toString('hex');
@@ -28,13 +29,13 @@ process.on('message', arg => {
                referer: arg.referer
            }
        }
-   };
+   }
    request(arg.url.imgUrl, ops).then(res => {
         if(res.data.length > arg.size && isValidType(res.type)) {
             let hash = genHash(res.data);
             let ext = getType(res.type);
-            fs.writeFileSync(__dirname + '/img/' + hash + ext, res.data);
-            process.send({url: res.url, hash: hash, filename: hash + ext, sUrl: arg.url.sUrl, size: res.data.length});
+            fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
+            process.send({url: res.url, hash: hash, filename: arg.dir + '/' + hash + ext, sUrl: arg.url.sUrl, size: res.data.length});
         } else {
             process.send({err: `File Size Or Type Error ${res.url}`});
         }

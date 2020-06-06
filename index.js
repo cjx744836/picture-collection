@@ -14,8 +14,16 @@ server.get('/', (req, res) => {
 });
 
 server.get('/clear', (req, res) => {
-    utils.delFiles(__dirname + '/img');
-    res.end('clear success');
+    if(req.query.url) {
+        try {
+            utils.delFiles(path.resolve(__dirname, 'img', new URL(req.query.url).host), req.query.s);
+        } catch (e) {
+            return res.end('删除失败');
+        }
+    } else {
+        utils.delFiles(path.resolve(__dirname, 'img'), req.query.s, 1);
+    }
+    res.end('删除成功');
 });
 
 server.get('*', (req, res) => {
