@@ -11,12 +11,22 @@
             color: #666;
             margin: 0;
         }
+        html {
+            overflow: hidden;
+        }
+        body {
+            overflow: auto;
+            height: 100vh;
+        }
         * {
             outline: 0;
         }
         .img {
             display: flex;
-            margin-bottom: 30px;
+            padding-bottom: 30px;
+        }
+        .full .img {
+            padding-bottom: 0;
         }
         .img > div {
             padding: 5px;
@@ -212,7 +222,7 @@
 </head>
 <body>
     <div class="app" v-cloak :class="{full:isFullScreen}">
-        <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false">
+        <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false" ref="ops">
             <span>子进程数<i v-title="'适当提高数值，会提升抓取效率'">?</i></span><input type="text" style="width:20px" v-model.number="process">
             <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay">
             <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size"><span>KB</span>
@@ -339,6 +349,7 @@
                 arr: [],
                 count: 10,
                 row_count: 3,
+                barWidth: getBarWidth().h,
                 delay: 1000,
                 ready: false,
                 disabled: false,
@@ -419,10 +430,7 @@
                         e.preventDefault();
                         this.fullScreen();
                     }
-                    if(this.$refs.viewer.$viewer.isShown) {
-                        return e.stopPropagation();
-                    }
-                    if(this.pager === '1') {
+                    if(this.pager === '1' && !this.$refs.viewer.$viewer.isShown) {
                         switch (e.keyCode) {
                             case 37:
                                 this.pageTo(this.page - 1);
@@ -451,9 +459,7 @@
                     if(pageSize > this.list.length) pageSize = this.list.length;
                     this.page = Math.ceil(pageSize / (this.count * this.row_count)) || 1;
                     this.genArr();
-                    if(this.last > 1) {
-                        this.genPage();
-                    }
+                    this.genPage();
                 },
                 fullScreen() {
                     if(document.fullscreenElement) {
@@ -516,6 +522,7 @@
                             this.arr[n].push(d);
                         });
                     }
+                    this.calcBar();
                 },
                 pageTo(page, i) {
                     if(page === '...') {
@@ -574,6 +581,16 @@
                         this.last = c;
                         this.genPage();
                     }
+                    this.calcBar();
+                },
+                calcBar() {
+                    this.$nextTick(() => {
+                       if(document.body.offsetHeight < document.body.scrollHeight) {
+                           document.body.style.marginRight = -this.barWidth + 'px';
+                       } else {
+                           document.body.style.marginRight = 0;
+                       }
+                    });
                 },
                 stop() {
                     this.m_stop = true;
@@ -581,10 +598,20 @@
                 }
             },
             mounted() {
-
             }
         });
 
+        function getBarWidth() {
+            let d = document.createElement('div');
+            let c = document.createElement('div');
+            d.style.cssText = `width:100px;height:100px;overflow:auto;`;
+            c.style.cssText = `width:200px;height:200px;`;
+            d.appendChild(c);
+            document.body.appendChild(d);
+            let o = {h: 100 - d.clientWidth, v: 100 - d.clientHeight};
+            d.remove();
+            return o;
+        }
         function send(o) {
             ws.send(JSON.stringify(o));
         }
