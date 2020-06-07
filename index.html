@@ -221,6 +221,38 @@
         span {
             user-select: none;
         }
+        .dle-dlg {
+            width: 300px;
+            background: #fff;
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            margin-left: -150px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .dle-dlg .item {
+            display: flex;
+            padding: 3px 10px;
+        }
+        .dle-dlg .item div {
+            flex: 1 1 auto;
+        }
+        .dle-dlg > .item {
+            border-bottom: 1px solid #ccc;
+        }
+        .dle-container {
+            max-height: 500px;
+            overflow: auto;
+        }
+        .dle-dlg .item div:first-child {
+            width: 60px;
+            flex: 0 0 auto;
+        }
+        .dle-btns {
+            text-align: center;
+            padding: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -238,8 +270,7 @@
                 <button @click="start" v-if="!disabled">开始</button>
                 <span v-if="disabled" class="loading"></span>
                 <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
-                <button @click="clear(0)">删除图片</button>
-                <button @click="clear(1)">删除图片和文件夹</button>
+                <button @click="clear" v-if="!disabled">删除图片</button>
                 <button @click="sort">大小排序</button>
                 <button @click="fullScreen">{{isFullScreen?'退出全屏':'全屏'}}</button>
             </span>
@@ -253,6 +284,25 @@
                 </div>
             </div>
         </div>
+        <transition name="slide">
+            <div class="dle-dlg" @click.stop v-if="delVisible">
+                <div class="item">
+                    <div><input type="checkbox" @click="selectAll"></div>
+                    <div>文件夹</div>
+                </div>
+                <div class="dle-container" v-if="dirList.length">
+                    <div class="item" v-for="k in dirList" :key="k">
+                        <div><input type="checkbox" :checked="sels[k]" @click="selectRow($event,k)"></div>
+                        <div>{{k}}</div>
+                    </div>
+                </div>
+                <div v-else>当前没有可删除的图片，只先采集</div>
+                <div class="dle-btns" v-if="dirList.length">
+                    <button @click="delImage">仅删除图片</button>
+                    <button @click="delImageAndDir">删除图片和文件夹</button>
+                </div>
+            </div>
+        </transition>
         <div class="page" :class="{full:isFullScreen, top:isBottom}" @mouseleave="isBottom=false">
             <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :key="k" :class="{active:page===k}">{{k}}</span>
             <span class="total" v-if="list.length">共{{list.length}}个</span>
@@ -364,6 +414,9 @@
                 referer: '1',
                 pageList: [],
                 layoutR: '3',
+                sels: {},
+                dirList: [],
+                delVisible: false,
                 errMes: '服务器未启动',
                 layoutC: '5',
                 layoutListR: [
@@ -509,23 +562,46 @@
                     n = size / 1024;
                     return n.toFixed(0) + 'KB';
                 },
-                clear(s) {
-                    let url = '/clear';
-                    let c = [];
-                    if(s) c.push('s=1');
-                    let mes = '';
-                    if(this.url) {
-                        mes = '【填写了网址，将删除当前网站采集的图片】';
-                        c.push('url=' + this.url);
-                        url += '?' + c.join('&');
-                    } else {
-                        mes = '【未填写网址，将删除所有网站采集的图片】';
-                    }
-                    if(confirm(mes)) {
-                        fetch(url).then(res => {
-                            res.text().then(res => this.$message(res));
+                clear() {
+                    this.showDelDlg();
+                    fetch('/dir').then(res => {
+                        res.json().then(res => {
+                            this.dirList = res.dirs;
+                            this.sels = {};
                         });
-                    }
+                    });
+                },
+                showDelDlg() {
+                    if(this.delVisible) return;
+                    this.delVisible = true;
+                    setTimeout(() => {
+                        document.addEventListener('click', this.hideDelDlg);
+                    });
+                },
+                hideDelDlg() {
+                    this.delVisible = false;
+                    document.removeEventListener('click', this.hideDelDlg);
+                },
+                selectAll(e) {
+                    this.sels = {};
+                    if(e.target.checked) this.dirList.forEach(d => this.$set(this.sels, d, true));
+                },
+                selectRow(e, k) {
+                    if(e.target.checked) this.sels[k] = true;
+                    else this.$delete(this.sels, k);
+                },
+                del(data) {
+                    if(data.dirs.length === 0) return this.$message('请先选择');
+                    this.hideDelDlg();
+                    fetch('/clear', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
+                        res.text().then(res => this.$message(res));
+                    });
+                },
+                delImage() {
+                    this.del({dirs: Object.keys(this.sels)});
+                },
+                delImageAndDir() {
+                    this.del({dirs: Object.keys(this.sels), s: 1});
                 },
                 reset() {
                     this.arr = [];
