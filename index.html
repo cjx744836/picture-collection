@@ -225,10 +225,21 @@
         span {
             user-select: none;
         }
+        .dle-dlg-wrap {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            top: 0;
+        }
+        .del-dlg-bg {
+            width: 100%;
+            height: 100%;
+        }
         .dle-dlg {
             width: 300px;
             background: #fff;
-            position: fixed;
+            position: absolute;
             top: 100px;
             left: 50%;
             margin-left: -150px;
@@ -289,21 +300,24 @@
             </div>
         </div>
         <transition name="slide">
-            <div class="dle-dlg" @click.stop v-if="delVisible">
-                <div class="item">
-                    <div><input type="checkbox" @click="selectAll"></div>
-                    <div>文件夹</div>
-                </div>
-                <div class="dle-container" v-if="dirList.length">
-                    <div class="item" v-for="k in dirList" :key="k">
-                        <div><input type="checkbox" :checked="sels[k]" @click="selectRow($event,k)"></div>
-                        <div>{{k}}</div>
+            <div class="dle-dlg-wrap" v-if="delVisible">
+                <div class="del-dlg-bg"></div>
+                <div class="dle-dlg" @click.stop>
+                    <div class="item">
+                        <div><input type="checkbox" @click="selectAll"></div>
+                        <div>文件夹</div>
                     </div>
-                </div>
-                <div v-else>当前没有可删除的图片，只先采集</div>
-                <div class="dle-btns" v-if="dirList.length">
-                    <button @click="delImage">仅删除图片</button>
-                    <button @click="delImageAndDir">删除图片和文件夹</button>
+                    <div class="dle-container" v-if="dirList.length">
+                        <div class="item" v-for="k in dirList" :key="k">
+                            <div><input type="checkbox" :checked="sels[k]" @click="selectRow($event,k)"></div>
+                            <div>{{k}}</div>
+                        </div>
+                    </div>
+                    <div v-else>当前没有可删除的图片，只先采集</div>
+                    <div class="dle-btns" v-if="dirList.length">
+                        <button @click="delImage">仅删除图片</button>
+                        <button @click="delImageAndDir">删除图片和文件夹</button>
+                    </div>
                 </div>
             </div>
         </transition>
@@ -579,13 +593,12 @@
                     if(this.delVisible) return;
                     this.delVisible = true;
                     setTimeout(() => {
-                        document.addEventListener('click', this.hideDelDlg, true);
+                        document.addEventListener('click', this.hideDelDlg);
                     });
                 },
-                hideDelDlg(e) {
-                    e.stopPropagation();
+                hideDelDlg() {
                     this.delVisible = false;
-                    document.removeEventListener('click', this.hideDelDlg, true);
+                    document.removeEventListener('click', this.hideDelDlg);
                 },
                 selectAll(e) {
                     this.sels = {};
