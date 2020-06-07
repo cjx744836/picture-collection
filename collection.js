@@ -8,7 +8,7 @@ function genHash(data) {
 }
 
 function isValidType(type) {
-    return /image/i.test(type);
+    return /image|octet-stream/i.test(type);
 }
 
 function getType(type) {
