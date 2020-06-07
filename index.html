@@ -672,6 +672,7 @@
                     this.disabled = true;
                 },
                 add(url) {
+                    if(this.list.some(d => d.imgUrl === url.imgUrl)) return;
                     let n = this.list.length % this.count;
                     let pageSize = this.row_count * this.count;
                     if(this.pager === '1') {
