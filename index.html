@@ -20,6 +20,10 @@
         }
         * {
             outline: 0;
+            user-select: none;
+        }
+        input {
+            user-select: auto;
         }
         .img {
             display: flex;
@@ -483,7 +487,7 @@
                 this.width = 100 / this.count + '%';
                 this.initArr();
                 document.addEventListener('mousewheel', e => {
-                   this.scrollTop(e.deltaY)
+                    !this.$refs.viewer.$viewer.isShown && this.scrollTop(e.deltaY)
                 });
                 document.addEventListener('keydown', e => {
                     if(e.keyCode === 122) {
@@ -575,12 +579,13 @@
                     if(this.delVisible) return;
                     this.delVisible = true;
                     setTimeout(() => {
-                        document.addEventListener('click', this.hideDelDlg);
+                        document.addEventListener('click', this.hideDelDlg, true);
                     });
                 },
-                hideDelDlg() {
+                hideDelDlg(e) {
+                    e.stopPropagation();
                     this.delVisible = false;
-                    document.removeEventListener('click', this.hideDelDlg);
+                    document.removeEventListener('click', this.hideDelDlg, true);
                 },
                 selectAll(e) {
                     this.sels = {};
