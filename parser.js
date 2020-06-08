@@ -146,7 +146,9 @@ function parse(delay, prop) {
     }).catch(err => {
         delayParse(delay, prop);
         if(urls.length === 1) {
-            process.send({err: `网站解析失败，请重试!${err.message}`});
+            process.send({err: `网站解析失败，请重试!${err.message}`, code: 0});
+        } else {
+            process.send({err: err.message, code: 1});
         }
     });
 }

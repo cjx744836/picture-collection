@@ -1,8 +1,10 @@
 const ws = require('nodejs-websocket');
 const {fork} = require('child_process');
 const childManager = require('./childmanager');
+const controller = require('./controller');
 const fs = require('fs');
 const path = require('path');
+const utils = require('./utils');
 const port = 3002;
 let imageURL = [], size;
 let max_process = 8;
@@ -10,6 +12,7 @@ let delay = 0;
 let index = 0;
 const MAX = 100000;
 let one = false;
+let sid = 0;
 
 ws.createServer(connection => {
     if(one) {
@@ -36,9 +39,11 @@ ws.createServer(connection => {
             createParser(o.url, o.prop, connection);
             let url = new URL(o.url);
             let dir = path.resolve(__dirname, 'img', url.host);
+            sid = utils.genHash(url.host);
             if(!fs.existsSync(dir)) {
                 fs.mkdirSync(dir);
             }
+            controller.saveHost(sid, url.host);
             for(let i = 0; i < max_process; i++) {
                 createImageCollection(connection, url.protocol + '//' + url.hostname, i, o.referer, url.host);
             }
@@ -69,9 +74,11 @@ function createParser(url, prop, connection) {
             return childManager.over();
         }
         if(arg.err) {
+            if(arg.code === 0)
             return childManager.onOver(() => {
                connection.sendText(JSON.stringify({err: arg.err}));
             });
+            return controller.saveLog(arg.err);
         }
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
@@ -104,8 +111,18 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
                 if(over) return childManager.kill(child);
                 return delaySend(3000);
             }
+            controller.saveLog(arg.err);
         } else {
-            connection.sendText(JSON.stringify({imgUrl: '/' + arg.filename, sUrl: arg.sUrl, size: arg.size}));
+            let filename = `${arg.hash}${arg.ext}`;
+            let data = {
+                    sid,
+                    id: arg.hash,
+                    filesize: arg.size,
+                    filename: filename,
+                    surl: arg.sUrl
+                };
+            controller.saveFile(data);
+            connection.sendText(JSON.stringify({imgUrl: '/' + dir + '/' + filename, sUrl: arg.sUrl, size: arg.size, id: arg.hash}));
         }
         delaySend(delay);
     });

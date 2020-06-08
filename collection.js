@@ -2,10 +2,7 @@ const crypto = require('crypto');
 const request = require('./request');
 const fs = require('fs');
 const path = require('path');
-
-function genHash(data) {
-    return crypto.createHash('sha1').update(data).digest().toString('hex');
-}
+const utils = require('./utils');
 
 function isValidType(type) {
     return /image|octet-stream/i.test(type);
@@ -31,14 +28,12 @@ process.on('message', arg => {
        }
    }
    request(arg.url.imgUrl, ops).then(res => {
-        if(res.data.length > arg.size && isValidType(res.type)) {
-            let hash = genHash(res.data);
-            let ext = getType(res.type);
-            fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
-            process.send({url: res.url, hash: hash, filename: arg.dir + '/' + hash + ext, sUrl: arg.url.sUrl, size: res.data.length});
-        } else {
-            process.send({err: `File Size Or Type Error ${res.url}`});
-        }
+        if(!isValidType(res.type)) return process.send({err: `图片类型错误 ${res.url}`});
+        if(res.data.length < arg.size) return process.send({err: `图片大小过滤 ${res.url}`});
+        let hash = utils.genHash(res.data);
+        let ext = getType(res.type);
+        fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
+        process.send({hash: hash, ext: ext, sUrl: arg.url.sUrl, size: res.data.length});
    }).catch(err => {
       process.send({err: err.message});
    });

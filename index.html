@@ -38,7 +38,6 @@
         }
         .img img {
             width: 100%;
-            margin-bottom: 10px;
         }
         [v-cloak] {
             display: none;
@@ -86,6 +85,7 @@
         }
         .img-inner {
             position: relative;
+            margin-bottom: 10px;
         }
         .img-inner > a {
             position: absolute;
@@ -237,12 +237,12 @@
             height: 100%;
         }
         .dle-dlg {
-            width: 300px;
+            width: 500px;
             background: #fff;
             position: absolute;
             top: 100px;
             left: 50%;
-            margin-left: -150px;
+            margin-left: -250px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
@@ -256,6 +256,11 @@
         .dle-dlg > .item {
             border-bottom: 1px solid #ccc;
         }
+        .dle-dlg .item div:last-child {
+            width: 70px;
+            flex: 0 0 auto;
+            text-align: right;
+        }
         .dle-container {
             max-height: 500px;
             overflow: auto;
@@ -267,6 +272,29 @@
         .dle-btns {
             text-align: center;
             padding: 5px 0;
+        }
+        .edit {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #00000055;
+        }
+        .edit.active {
+            background: #2b86b1d9;
+        }
+        .edit span {
+            color: #fff;
+            background: #3da0ffa1;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 14px;
+            padding: 5px;
+        }
+        .ops a {
+            color: #3da0ff;
+            text-decoration: none;
         }
     </style>
 </head>
@@ -282,12 +310,16 @@
             <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</select>
             <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
             <span v-if="ready">
-                <button @click="start" v-if="!disabled">开始</button>
+                <button @click="start" v-if="!disabled&&!m_edit">开始</button>
                 <span v-if="disabled" class="loading"></span>
                 <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
-                <button @click="clear" v-if="!disabled">删除图片</button>
+                <button @click="clear" v-if="!disabled&&!m_edit">删除/加载图片</button>
                 <button @click="sort">大小排序</button>
+                <button @click="m_edit=!m_edit">{{!m_edit?'编辑':'退出编辑'}}</button>
+                <button @click="delSelImage" v-if="m_edit">删除图片</button>
+                <button @click="selsImage" v-if="m_edit">全选</button>
                 <button @click="fullScreen">{{isFullScreen?'退出全屏':'全屏'}}</button>
+                <a href="/logs" target="_blank" title="最近1000条错误日志">日志</a>
             </span>
             <span v-else>{{errMes}}</span>
         </div>
@@ -296,6 +328,9 @@
                 <div v-for="p in arr[i]" class="img-inner">
                     <img :src="p.imgUrl">
                     <a :href="p.sUrl" target="_blank" @click.stop>{{formatSize(p.size)}}</a>
+                    <div v-if="m_edit" class="edit" @click.stop="editAll(p.id)" :class="{active:selEdit[p.id]}">
+                        <span @click.stop="dels(p.id)">删除</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -304,26 +339,29 @@
                 <div class="del-dlg-bg"></div>
                 <div class="dle-dlg" @click.stop>
                     <div class="item">
-                        <div><input type="checkbox" @click="selectAll"></div>
+                        <div><input type="checkbox" v-model="m_sel_all" @click="selectAll"></div>
                         <div>文件夹</div>
+                        <div>图片数量</div>
                     </div>
                     <div class="dle-container" v-if="dirList.length">
-                        <div class="item" v-for="k in dirList" :key="k">
-                            <div><input type="checkbox" :checked="sels[k]" @click="selectRow($event,k)"></div>
-                            <div>{{k}}</div>
+                        <div class="item" v-for="k in dirList" :key="k.id">
+                            <div><input type="checkbox" :checked="sels[k.id]" @click="selectRow($event,k.id)"></div>
+                            <div>{{k.dir}}</div>
+                            <div>{{k.num}}</div>
                         </div>
                     </div>
                     <div v-else>当前没有可删除的图片，只先采集</div>
                     <div class="dle-btns" v-if="dirList.length">
                         <button @click="delImage">仅删除图片</button>
                         <button @click="delImageAndDir">删除图片和文件夹</button>
+                        <button @click="loadImage">加载图片</button>
                     </div>
                 </div>
             </div>
         </transition>
-        <div class="page" :class="{full:isFullScreen, top:isBottom}" @mouseleave="isBottom=false">
+        <div class="page" :class="{full:isFullScreen, top:isBottom}" @mouseleave="isBottom=false" v-if="list.length">
             <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :key="k" :class="{active:page===k}">{{k}}</span>
-            <span class="total" v-if="list.length">共{{list.length}}个</span>
+            <span class="total">共{{list.length}}个</span>
         </div>
     </div>
     <script src="/vue.min.js" type="text/javascript"></script>
@@ -428,7 +466,11 @@
                 m_stop: false,
                 isFullScreen: false,
                 isTop: false,
+                m_sels_reversal: false,
                 isBottom: false,
+                m_sel_all: false,
+                m_edit: false,
+                selEdit: {},
                 referer: '1',
                 pageList: [],
                 layoutR: '3',
@@ -473,6 +515,9 @@
                 list: []
             },
             watch: {
+                m_edit() {
+                    this.selEdit = {};
+                },
                 pager(v) {
                     if(v === '2') {
                         this.pageList = [];
@@ -585,9 +630,63 @@
                     fetch('/dir').then(res => {
                         res.json().then(res => {
                             this.dirList = res.dirs;
+                            this.m_sel_all = false;
                             this.sels = {};
                         });
                     });
+                },
+                dels(id) {
+                    this.delsImage({ids: [id]});
+                },
+                delsImage(data) {
+                    fetch('/del', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
+                        res.json().then(res => {
+                            if(res.code === 0) {
+                                this.$message('删除成功');
+                                data.ids.forEach(id => {
+                                    for(let i = 0, len = this.list.length; i < len; i++) {
+                                        if(this.list[i].id === id) {
+                                            this.list.splice(i, 1);
+                                            break;
+                                        }
+                                    }
+                                });
+                                this.selEdit = {};
+                                this.m_sels_reversal = false;
+                                this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
+                                if(this.page > this.last) this.page = this.last;
+                                this.genArr();
+                                this.genPage();
+                            } else {
+                                this.$message('删除失败');
+                            }
+                        });
+                    });
+                },
+                delSelImage() {
+                    let ids = Object.keys(this.selEdit);
+                    if(ids.length === 0) return this.$message('请选择');
+                    this.delsImage({ids});
+                },
+                selsImage() {
+                    if(!this.m_sels_reversal) {
+                        this.arr.forEach(d => {
+                           d.forEach(c => {
+                              this.$set(this.selEdit, c.id, true);
+                           });
+                        });
+                    } else {
+                        this.arr.forEach(d => {
+                            d.forEach(c => {
+                                this.$delete(this.selEdit, c.id);
+                            });
+                        });
+                    }
+                    this.m_sels_reversal = !this.m_sels_reversal;
+                },
+                editAll(id) {
+                    if(!this.selEdit[id]) this.$set(this.selEdit, id, true);
+                    else this.$delete(this.selEdit, id);
                 },
                 showDelDlg() {
                     if(this.delVisible) return;
@@ -602,24 +701,39 @@
                 },
                 selectAll(e) {
                     this.sels = {};
-                    if(e.target.checked) this.dirList.forEach(d => this.$set(this.sels, d, true));
+                    if(e.target.checked) this.dirList.forEach(d => this.$set(this.sels, d.id, true));
                 },
                 selectRow(e, k) {
                     if(e.target.checked) this.sels[k] = true;
                     else this.$delete(this.sels, k);
+                    this.m_sel_all = Object.keys(this.sels).length === this.dirList.length;
                 },
                 del(data) {
-                    if(data.dirs.length === 0) return this.$message('请先选择');
+                    if(data.ids.length === 0) return this.$message('请先选择');
                     this.hideDelDlg();
                     fetch('/clear', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
                         res.text().then(res => this.$message(res));
                     });
                 },
                 delImage() {
-                    this.del({dirs: Object.keys(this.sels)});
+                    this.del({ids: Object.keys(this.sels)});
                 },
                 delImageAndDir() {
-                    this.del({dirs: Object.keys(this.sels), s: 1});
+                    this.del({ids: Object.keys(this.sels), s: 1});
+                },
+                loadImage() {
+                    let d = Object.keys(this.sels);
+                    if(d.length === 0) return this.$message('请先选择');
+                    fetch('/loadImage', {method: 'post', body: JSON.stringify({ids: d}), headers: {'content-type': 'application/json'}}).then(res => {
+                       res.json().then(res => {
+                           this.list = res.list;
+                           this.page = 1;
+                          this.genArr();
+                          this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
+                          this.genPage();
+                           this.hideDelDlg();
+                       });
+                    });
                 },
                 reset() {
                     this.arr = [];
@@ -627,6 +741,7 @@
                     this.pageList = [];
                     this.page = 1;
                     this.last = 1;
+                    this.m_edit = false;
                     this.m_stop = false;
                     for(let i = 0; i < this.count; i++) {
                         this.arr.push([]);
@@ -657,6 +772,7 @@
                     if(page < 1) page = 1;
                     else if(page > this.last - 1) page = this.last;
                     if(page === this.page) return;
+                    this.m_sels_reversal = false;
                     this.page = page;
                     this.genArr();
                     this.genPage();
@@ -688,9 +804,10 @@
                     this.reset();
                     send({url: this.url, process: this.process, size: this.size, delay: this.delay, prop: this.prop, referer: this.referer === '1' ? 1 : 0});
                     this.disabled = true;
+                    fetch('/clearLogs');
                 },
                 add(url) {
-                    if(this.list.some(d => d.imgUrl === url.imgUrl)) return;
+                    if(this.list.some(d => d.id === url.id)) return;
                     let n = this.list.length % this.count;
                     let pageSize = this.row_count * this.count;
                     if(this.pager === '1') {

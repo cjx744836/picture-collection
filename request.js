@@ -30,16 +30,16 @@ function get(url, options) {
                 if(res.headers.location) {
                     redirect_count++;
                     if(redirect_count > 5) {
-                        return reject(new Error(`Redirect Max ${url}`));
+                        return reject(new Error(`重定向次数太多 ${url}`));
                     }
                     if(res.headers.location.indexOf('http') > -1) {
                         url = res.headers.location;
                     } else {
-                        return reject(new Error(`Invalid URL ${url}`));
+                        return reject(new Error(`无效的链接 ${url}`));
                     }
                     return get(url, options).then(res => resolve(res)).catch(err => reject(err));
                 } else {
-                    return reject(new Error(`Redirect Failed ${url}`));
+                    return reject(new Error(`重定向失败 ${url}`));
                 }
             } else {
                 if(code === 200) {
@@ -47,7 +47,7 @@ function get(url, options) {
                     resId = setTimeout(() => {
                         res.destroy();
                         rawData = undefined;
-                        reject(new Error(`Response Timeout ${url}`));
+                        reject(new Error(`响应超时 ${url}`));
                     }, resTIMEOUT);
                     let m;
                     res.on('data', chunk => {
@@ -62,13 +62,13 @@ function get(url, options) {
                         reject(e);
                     });
                 } else {
-                    reject(new Error(`Not Found ${code} ${url}`));
+                    reject(new Error(`错误状态码 ${code} ${url}`));
                 }
             }
         });
         tid = setTimeout(() => {
             req.destroy();
-            reject(new Error(`Request Timeout ${url}`));
+            reject(new Error(`请求超时 ${url}`));
         }, reqTIMEOUT);
         req.on('error', (e) => {
             if(req.destroyed) return;
