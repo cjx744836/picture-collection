@@ -438,7 +438,17 @@
         Vue.use(VueViewer.default, {
             defaultOptions: {
                 navbar: false,
-                toolbar: false,
+                interval: 3000,
+                toolbar: {
+                    oneToOne: 1,
+                    reset: 1,
+                    prev: 1,
+                    next: 1,
+                    rotateLeft: 1,
+                    rotateRight: 1,
+                    flipHorizontal: 1,
+                    flipVertical: 1,
+                },
                 transition: false,
                 title: false
             }
