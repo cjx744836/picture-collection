@@ -145,9 +145,9 @@ function parse(delay, ops, prop, otherops) {
         delayParse(delay, ops, prop, otherops);
     }).catch(err => {
         if(urls.length === 1) {
-            process.send({err: `pid[${process.pid}] ${err.message}`, code: 0, url: err.url});
+            process.send({err: `${err.message}`, code: 0, url: err.url});
         } else {
-            process.send({err: `pid[${process.pid}] ${err.message}`, code: 1, url: err.url});
+            process.send({err: `[解析进程] - [${process.pid}] - ${err.message}`, code: 1, url: err.url});
         }
         delayParse(delay, ops, prop, otherops);
     });

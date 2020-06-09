@@ -38,7 +38,7 @@ server.get('/logs', async (req, res) => {
    res.set('content-type', 'text/html');
    let html = `<ul style="font-size:14px;">`;
    data.forEach(d => {
-       html += `<li>[${d.time}]: ${d.err}</li>`;
+       html += `<li>[${d.time}] - ${d.err}</li>`;
    });
    html += '</ul>';
    res.end(html);

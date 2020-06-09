@@ -86,8 +86,9 @@ function createParser(url, prop, connection, openReferer, referer) {
             return childManager.onOver(() => {
                connection.sendText(JSON.stringify({err: arg.err}));
             });
-            return controller.saveLog(arg.err + ` <a href="${arg.url}" target="_blank">${arg.url}</a>`);
+            return controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         }
+        controller.saveLog(`[解析进程] - [${child.pid}] - 解析图片地址${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
                 imageURL.length < MAX && imageURL.push({imgUrl: d, sUrl: arg.sUrl});
@@ -116,10 +117,11 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
     child.on('message', arg => {
         if(arg.err) {
             if(arg.code === 0) {
+                controller.saveLog(arg.err);
                 if(over) return childManager.kill(child);
                 return delaySend(3000);
             }
-            controller.saveLog(arg.err + ` <a href="${arg.url}" target="_blank">${arg.url}</a>`);
+            controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         } else {
             let filename = `${arg.hash}${arg.ext}`;
             let data = {
@@ -140,7 +142,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
         }, delay);
     }
     function send() {
-        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, otherops})
+        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, otherops, index: i})
     }
     delaySend(delay + i * 1000);
 }
