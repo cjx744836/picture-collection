@@ -19,22 +19,17 @@ function getType(type) {
 
 process.on('message', arg => {
    if(!arg.url) return process.send({err: `No Url`, code: 0});
-   let ops = {};
-   if(arg.openReferer) {
-       ops = {
-           headers: {
-               referer: arg.referer
-           }
-       }
-   }
-   request(arg.url.imgUrl, ops).then(res => {
-        if(!isValidType(res.type)) return process.send({err: `图片类型错误 ${res.url}`});
-        if(res.data.length < arg.size) return process.send({err: `图片大小过滤 ${res.url}`});
+   let ops = {headers: {}};
+   if(arg.openReferer) ops.headers.referer = arg.referer;
+   if(arg.cookie) ops.headers.cookie = arg.cookie;
+   request(arg.url.imgUrl, ops, arg.timeout).then(res => {
+        if(!isValidType(res.type)) return process.send({err: `[${process.pid}] 图片类型错误 ${res.url}`});
+        if(res.data.length < arg.size) return process.send({err: `[${process.pid}] 图片大小过滤 ${res.url}`});
         let hash = utils.genHash(res.data);
         let ext = getType(res.type);
         fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
         process.send({hash: hash, ext: ext, sUrl: arg.url.sUrl, size: res.data.length});
    }).catch(err => {
-      process.send({err: err.message});
+      process.send({err: `[${process.pid}] ${err.message}`});
    });
 });

@@ -126,10 +126,10 @@ function add(u, url) {
     });
 }
 
-function parse(delay, prop) {
+function parse(delay, ops, prop, timeout) {
     if(index === urls.length) return process.send({over: 1});
     let url = urls[index++];
-    request(url).then(res => {
+    request(url, ops, timeout).then(res => {
         let text = res.data.toString();
         let imgs = [];
         let base = getBase(text);
@@ -142,25 +142,28 @@ function parse(delay, prop) {
             imgs = imgs.concat(getImgProp(text, res.url, prop));
         }
         process.send({imgUrl: imgs, sUrl: res.url});
-        delayParse(delay, prop);
+        delayParse(delay, ops, prop, timeout);
     }).catch(err => {
-        delayParse(delay, prop);
         if(urls.length === 1) {
-            process.send({err: `网站解析失败，请重试!${err.message}`, code: 0});
+            process.send({err: `[${process.pid}] 网站解析失败，请重试!${err.message}`, code: 0});
         } else {
-            process.send({err: err.message, code: 1});
+            process.send({err: `[${process.pid}] ${err.message}`, code: 1});
         }
+        delayParse(delay, ops, prop, timeout);
     });
 }
 
-function delayParse(delay, prop) {
+function delayParse(delay, ops, prop, timeout) {
     setTimeout(() => {
-        parse(delay, prop);
+        parse(delay, ops, prop, timeout);
     }, delay);
 }
 
 process.on('message', arg => {
    if(!arg.url) return;
    urls.push(arg.url);
-   parse(arg.delay, arg.prop);
+   let ops = {headers: {}};
+   if(arg.cookie) ops.headers.cookie = arg.cookie;
+   if(arg.openReferer) ops.headers.referer = arg.referer;
+   parse(arg.delay, ops, arg.prop, arg.timeout);
 });

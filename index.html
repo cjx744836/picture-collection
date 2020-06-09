@@ -5,331 +5,70 @@
     <meta content="no-referrer" name="referrer">
     <title>获取指定网站的图片</title>
     <link href="/viewer.min.css" rel="stylesheet" type="text/css">
-    <style>
-        html, body {
-            font-size: 14px;
-            color: #666;
-            margin: 0;
-        }
-        html {
-            overflow: hidden;
-            height: 100vh;
-        }
-        body {
-            overflow: visible;
-        }
-        * {
-            outline: 0;
-            user-select: none;
-        }
-        input {
-            user-select: auto;
-        }
-        .img {
-            display: flex;
-            padding-bottom: 30px;
-        }
-        .full .img {
-            padding-bottom: 0;
-        }
-        .img > div {
-            padding: 5px;
-            font-size: 0;
-        }
-        .img img {
-            width: 100%;
-        }
-        [v-cloak] {
-            display: none;
-        }
-        .ops {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            background: #fff;
-            transition-duration: 0.3s;
-            transition-delay: 1s;
-        }
-        .ops  * {
-            vertical-align: middle;
-            margin-right: 5px;
-        }
-        .ops input {
-            width: 250px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            padding: 5px;
-            outline: 0;
-        }
-        input:focus, select:focus {
-            border: 1px solid #3da0ff;
-        }
-        button {
-            background: linear-gradient(180deg, #3da0ff, #1c608e 75%);
-            color: #fff;
-            border: 0;
-            padding: 5px 10px;
-            transition-duration: .1s;
-            border-radius: 5px;
-        }
-        button:active {
-            box-shadow: inset 0 6px 10px 0 #276e8a;
-            color: #e9eff1;
-        }
-        button.disabled {
-            cursor: not-allowed;
-            background: #e0e0e0;
-            color: #a2a2a2;
-        }
-        .viewer-backdrop {
-            background: rgba(0,0,0,0.95);
-        }
-        .img-inner {
-            position: relative;
-            margin-bottom: 10px;
-        }
-        .img-inner > a {
-            position: absolute;
-            right: 2px;
-            top: 2px;
-            display: inline-block;
-            font-size: 12px;
-            padding: 2px 5px;
-            border: 1px solid #666;
-            color: #666;
-            background: rgba(255, 255, 255, 0.75);
-            text-decoration: none;
-        }
-        span > i {
-            display: inline-block;
-            width: 13px;
-            height: 13px;
-            line-height: 13px;
-            font-size: 12px;
-            font-weight: bold;
-            background: #b1b1b1;
-            color: #fff;
-            text-align: center;
-            border-radius: 50%;
-            font-style: normal;
-            margin: 0 3px;
-            cursor: default;
-        }
-        .tips {
-            background: #e9eff1;
-            padding: 5px;
-            font-size: 14px;
-            border-radius: 3px;
-            position: fixed;
-            z-index: 5;
-        }
-        .message {
-            background: #3da0ff;
-            padding: 5px;
-            color: #fff;
-            font-size: 14px;
-            border-radius: 3px;
-            position: fixed;
-            z-index: 5;
-            top: 10px;
-            left: 50%;
-        }
-        .slide-enter-active, .slide-leave-active {
-            transition-duration: 0.3s;
-        }
-        .slide-enter, .slide-leave-to {
-            opacity: 0;
-            margin-top: -10px;
-        }
-        .loading {
-            width: 15px;
-            height: 15px;
-            border: 5px solid #e9eff1;
-            border-radius: 50%;
-            position: relative;
-            animation: circle 2s linear infinite;
-            display: inline-block;
-        }
-        .loading:after {
-            display: inline-block;
-            content: '';
-            width: 15px;
-            height: 15px;
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            border-top: 5px solid #3da0ff;
-            border-bottom: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-left: 5px solid transparent;
-            border-radius: 50%;
-        }
-        @keyframes circle {
-            0% {transform: rotate(0)}
-            100% {transform: rotate(360deg)}
-        }
-        .page {
-            text-align: center;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: rgba(255,255,255,0.9);
-            transition-duration: 0.3s;
-            transition-delay: 1s;
-        }
-        .page > span {
-            background: linear-gradient(0, #eaeaea, #fff);
-            border: 1px solid #e0e0e0;
-            cursor: pointer;
-            padding: 5px;
-            margin: 5px;
-            min-width: 22px;
-            display: inline-block;
-        }
-        .page > span:hover {
-            color: #2e82ca;
-            border-color: #2e82ca;
-        }
-        .page > span.active {
-            color: #fff;
-            background: #2e82ca;
-            border: 0;
-        }
-        .page > span.total {
-            color: inherit;
-            background: none;
-            border: 0;
-        }
-        select {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 5px;
-        }
-        .ops.full {
-            position: fixed;
-            z-index: 3;
-            width: 100%;
-            transform: translateY(-100%);
-        }
-        .page.full {
-            z-index: 3;
-            transform: translateY(100%);
-        }
-        .ops.full.top, .page.full.top {
-            transition-delay: 0s;
-            transform: translateY(0);
-        }
-        .app.full {
-            background: #000;
-            min-height: 100vh;
-        }
-        span {
-            user-select: none;
-        }
-        .dle-dlg-wrap {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            z-index: 3;
-            top: 0;
-        }
-        .del-dlg-bg {
-            width: 100%;
-            height: 100%;
-        }
-        .dle-dlg {
-            width: 500px;
-            background: #fff;
-            position: absolute;
-            top: 100px;
-            left: 50%;
-            margin-left: -250px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .dle-dlg .item {
-            display: flex;
-            padding: 3px 10px;
-        }
-        .dle-dlg .item div {
-            flex: 1 1 auto;
-        }
-        .dle-dlg > .item {
-            border-bottom: 1px solid #ccc;
-        }
-        .dle-dlg .item div:last-child {
-            width: 70px;
-            flex: 0 0 auto;
-            text-align: right;
-        }
-        .dle-container {
-            max-height: 500px;
-            overflow: auto;
-        }
-        .dle-dlg .item div:first-child {
-            width: 60px;
-            flex: 0 0 auto;
-        }
-        .dle-btns {
-            text-align: center;
-            padding: 5px 0;
-        }
-        .edit {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: #00000055;
-        }
-        .edit.active {
-            background: #2b86b1d9;
-        }
-        .edit span {
-            color: #fff;
-            background: #3da0ffa1;
-            cursor: pointer;
-            display: inline-block;
-            font-size: 14px;
-            padding: 5px;
-        }
-        .ops a {
-            color: #3da0ff;
-            text-decoration: none;
-        }
-    </style>
+    <link href="/iconfont.css" rel="stylesheet" type="text/css">
+    <link href="/index.css" rel="stylesheet" type="text/css">
 </head>
 <body>
     <div class="app" v-cloak :class="{full:isFullScreen}">
         <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false" ref="ops">
-            <span>下载进程<i v-title="'图片下载进程，适当提高数值，会提升抓取效率，不是越高越好'">?</i></span><input type="text" style="width:20px" v-model.number="process" @click="selAll" @keydown.stop>
-            <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" style="width:40px" v-model.number="delay" @click="selAll" @keydown.stop>
-            <span>图片大于<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size" @click="selAll" @keydown.stop><span>KB</span>
-            <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" style="width:50px;" v-model.trim="prop" @click="selAll" @keydown.stop>
+            <span v-title="'参数设置'" class="icon-set iconfont" @click="m_set_visible=true"></span>
             <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR" @keydown.prevent><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC" @keydown.prevent><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
-            <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
-            <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</select>
-            <span>图片网站<i v-title="'提供一个网站地址'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
+            <span>图片网站<i v-title="'需要采集图片的网站地址'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
             <span v-if="ready">
                 <button @click="start" v-if="!disabled&&!m_edit">开始</button>
                 <span v-if="disabled" class="loading"></span>
                 <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
-                <button @click="clear" v-if="!disabled&&!m_edit">删除/加载图片</button>
-                <button @click="sort">大小排序</button>
-                <button @click="m_edit=!m_edit">{{!m_edit?'编辑':'退出编辑'}}</button>
-                <button @click="delSelImage" v-if="m_edit">删除图片</button>
+                <button @click="clear" v-if="!disabled&&!m_edit"><span class="icon-load iconfont"></span>删除/加载图片</button>
+                <button @click="sort"><span class="icon-sort iconfont"></span>大小排序</button>
+                <button @click="m_edit=!m_edit"><span class="iconfont icon-edit"></span>{{!m_edit?'编辑':'退出编辑'}}</button>
+                <button @click="delSelImage" v-if="m_edit"><span class="iconfont icon-delete"></span>删除图片</button>
                 <button @click="selsImage" v-if="m_edit">全选</button>
-                <button @click="fullScreen">{{isFullScreen?'退出全屏':'全屏'}}</button>
+                <button @click="fullScreen"><span class="icon-fullscreen iconfont"></span>{{isFullScreen?'退出全屏':'全屏'}}</button>
                 <a href="/logs" target="_blank" title="最近1000条错误日志">日志</a>
             </span>
             <span v-else>{{errMes}}</span>
         </div>
+        <transition name="slide">
+            <div class="set-dlg" v-if="m_set_visible">
+                <div class="set-dlg-bg" @click="m_set_visible=false"></div>
+                <div class="set-dlg-container" @keydown.stop>
+                    <div class="set-item">
+                        <span>图片下载进程<i v-title="'适当提高数值，会提升抓取效率，不是越高越好'">?</i></span><input type="text" v-model.number="process" @click="selAll">
+                    </div>
+                    <div class="set-item">
+                        <span>抓取间隔(ms)<i v-title="'有些网站可能做了频率检测，适当设置间隔时间，可以规避'">?</i></span><input type="text" v-model.number="delay" @click="selAll">
+                    </div>
+                    <div class="set-item">
+                        <span>图片大于(KB)<i v-title="'过滤掉小于指定大小的图片'">?</i></span><input type="text" style="width:40px;" v-model.number="size" @click="selAll">
+                    </div>
+                    <div class="set-item">
+                        <span>指定属性<i v-title="'有些网站的图片地址可能没有放在img标签的src属性上，所以需要指定一个属性'">?</i></span><input type="text" v-model.trim="prop" @click="selAll">
+                    </div>
+                    <div class="set-item">
+                        <span>分页<i v-title="'当图片很多的时候会影响性能，所以建议开启分页'">?</i></span><select v-model="pager" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
+                    </div>
+                    <div class="set-item">
+                        <span>引用<i v-title="'有些网站需要，有些网站不需要，可以尝试开启或关闭后再试'">?</i></span><select v-model="referer" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</select>
+                    </div>
+                    <div class="set-item">
+                        <span>设置Cookie<i v-title="'有些网站需要验证cookie，才能正常访问'">?</i></span><input type="text" v-model.trim="cookie" @click="selAll">
+                    </div>
+                    <div class="set-item">
+                        <span>请求超时(ms)<i v-title="'连接到网站的时间，超时中断连接'">?</i></span><input type="text" v-model.number="reqTimeout" @click="selAll">
+                    </div>
+                    <div class="set-item">
+                        <span>响应超时(ms)<i v-title="'获取网站数据的时间，超时中断连接'">?</i></span><input type="text" v-model.number="resTimeout" @click="selAll">
+                    </div>
+                </div>
+            </div>
+        </transition>
         <div class="img" v-viewer ref="viewer">
-            <div v-for="(k,i) in count" :style="{width: width}" :key="i">
-                <div v-for="p in arr[i]" class="img-inner">
+            <div v-for="(k,i) in arr" :style="{width: width}">
+                <div v-for="p in k" class="img-inner">
                     <img :src="p.imgUrl">
                     <a :href="p.sUrl" target="_blank" @click.stop>{{formatSize(p.size)}}</a>
                     <div v-if="m_edit" class="edit" @click.stop="editAll(p.id)" :class="{active:selEdit[p.id]}">
-                        <span @click.stop="dels(p.id)">删除</span>
+                        <span @click.stop="dels(p.id)" class="iconfont icon-delete"></span>
                     </div>
                 </div>
             </div>
@@ -344,7 +83,7 @@
                         <div>图片数量</div>
                     </div>
                     <div class="dle-container" v-if="dirList.length">
-                        <div class="item" v-for="k in dirList" :key="k.id">
+                        <div class="item" v-for="k in dirList">
                             <div><input type="checkbox" :checked="sels[k.id]" @click="selectRow($event,k.id)"></div>
                             <div>{{k.dir}}</div>
                             <div>{{k.num}}</div>
@@ -360,520 +99,14 @@
             </div>
         </transition>
         <div class="page" :class="{full:isFullScreen, top:isBottom}" @mouseleave="isBottom=false" v-if="list.length">
-            <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :key="k" :class="{active:page===k}">{{k}}</span>
+            <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :class="{active:page===k}">{{k}}</span>
             <span class="total">共{{list.length}}个</span>
         </div>
     </div>
     <script src="/vue.min.js" type="text/javascript"></script>
     <script src="/viewer.min.js" type="text/javascript"></script>
     <script src="/v-viewer.min.js" type="text/javascript"></script>
-    <script>
-        let ws;
-        let message = Vue.extend({
-            template: `
-                <transition name="slide" @after-leave="remove">
-                    <div class="message" v-if="visible">{{mes}}</div>
-                </transition>
-           `,
-            data() {
-                return {
-                    visible: false
-                }
-            },
-            methods: {
-                remove() {
-                    this.$el.remove();
-                }
-            },
-            props: ['mes'],
-            mounted() {
-                document.body.appendChild(this.$el);
-                this.$nextTick(() => {
-                    this.visible = true;
-                    setTimeout(() => {
-                        this.visible = false;
-                    }, 3000);
-                });
-            }
-            });
-        let tips = Vue.extend({
-           template: `
-                <transition name="slide" @after-leave="remove">
-                    <div class="tips" v-if="visible" :style="{left:x+'px',top:y+'px'}">{{mes}}</div>
-                </transition>
-           `,
-           data() {
-               return {
-                   visible: false
-               }
-           },
-            methods: {
-               close() {
-                   this.visible = false;
-               },
-               remove() {
-                   this.$el.remove();
-               }
-            },
-           props: ['mes', 'x', 'y'],
-            mounted() {
-               document.body.appendChild(this.$el);
-               this.$nextTick(() => {
-                   this.visible = true;
-
-               });
-            }
-        });
-        Vue.directive('title', {
-           bind(el, binding) {
-               let vm;
-               el.addEventListener('mouseover', e => {
-                   vm  = new tips({propsData: {mes: binding.value, x: e.clientX, y: e.clientY + 30}}).$mount();
-               });
-               el.addEventListener('mouseout', e => {
-                   vm.close();
-               });
-           }
-        });
-        Vue.use(VueViewer.default, {
-            defaultOptions: {
-                navbar: false,
-                interval: 3000,
-                toolbar: {
-                    oneToOne: 1,
-                    reset: 1,
-                    prev: 1,
-                    next: 1,
-                    rotateLeft: 1,
-                    rotateRight: 1,
-                    flipHorizontal: 1,
-                    flipVertical: 1,
-                },
-                transition: false,
-                title: false
-            }
-        });
-        Vue.prototype.$message = function(mes) {
-          return new message({
-              propsData: {
-                  mes: mes
-              }
-          }).$mount();
-        };
-        let app = new Vue({
-            el: '.app',
-            data: {
-                url: '',
-                process: 8,
-                width: '',
-                arr: [],
-                count: 10,
-                row_count: 3,
-                delay: 1000,
-                ready: false,
-                disabled: false,
-                m_sort: false,
-                m_stop: false,
-                isFullScreen: false,
-                isTop: false,
-                m_sels_reversal: false,
-                isBottom: false,
-                m_sel_all: false,
-                m_edit: false,
-                selEdit: {},
-                referer: '1',
-                pageList: [],
-                layoutR: '3',
-                sels: {},
-                dirList: [],
-                delVisible: false,
-                errMes: '服务器未启动',
-                layoutC: '5',
-                layoutListR: [
-                    {name: '1行',  value: '1'},
-                    {name: '2行',  value: '2'},
-                    {name: '3行',  value: '3'},
-                    {name: '4行',  value: '4'},
-                    {name: '5行',  value: '5'},
-                    {name: '6行',  value: '6'},
-                    {name: '7行',  value: '7'},
-                    {name: '8行',  value: '8'},
-                    {name: '9行',  value: '9'},
-                    {name: '10行',  value: '10'},
-                ],
-                layoutListC: [
-                    {name: '1列',  value: '1'},
-                    {name: '2列',  value: '2'},
-                    {name: '3列',  value: '3'},
-                    {name: '4列',  value: '4'},
-                    {name: '5列',  value: '5'},
-                    {name: '6列',  value: '6'},
-                    {name: '7列',  value: '7'},
-                    {name: '8列',  value: '8'},
-                    {name: '9列',  value: '9'},
-                    {name: '10列',  value: '10'},
-                ],
-                pager: '1',
-                pageContent: [
-                    {name: '开', value: '1'},
-                    {name: '关', value: '2'}
-                ],
-                page: 1,
-                last: 1,
-                prop: '',
-                size: 100,
-                list: []
-            },
-            watch: {
-                m_edit() {
-                    this.selEdit = {};
-                },
-                pager(v) {
-                    if(v === '2') {
-                        this.pageList = [];
-                    }
-                    this.page = 1;
-                    this.genArr();
-                    if(this.last > 1) {
-                        this.genPage();
-                    }
-                },
-                layoutC(v) {
-                    let pageSize = this.page * this.count * this.row_count;
-                    this.count = Number(v);
-                    this.width = 100 / this.count + '%';
-                    this.reCalc(pageSize);
-                },
-                layoutR(v) {
-                    let pageSize = this.page * this.count * this.row_count;
-                    this.row_count = Number(v);
-                    this.reCalc(pageSize);
-                }
-            },
-            created() {
-                this.count = Number(this.layoutC);
-                this.row_count = Number(this.layoutR);
-                this.width = 100 / this.count + '%';
-                this.initArr();
-                document.addEventListener('mousewheel', e => {
-                    !this.$refs.viewer.$viewer.isShown && this.scrollTop(e.deltaY)
-                });
-                document.addEventListener('keydown', e => {
-                    if(e.keyCode === 122) {
-                        e.preventDefault();
-                        this.fullScreen();
-                    }
-                    if(this.pager === '1' && !this.$refs.viewer.$viewer.isShown) {
-                        switch (e.keyCode) {
-                            case 37:
-                                this.pageTo(this.page - 1);
-                                break;
-                            case 39:
-                                this.pageTo(this.page + 1);
-                                break;
-                            case 38:
-                                this.scrollTop(-40);
-                                break;
-                            case 40:
-                                this.scrollTop(40);
-                                break;
-                        }
-                    }
-                });
-                document.addEventListener('mousemove', (e) => {
-                   if(e.clientY === 0 && this.isFullScreen && !this.isTop) {
-                        this.isTop = true;
-                   }
-                   if(e.clientY === window.innerHeight - 1 && this.isFullScreen && !this.isBottom) {
-                       this.isBottom = true;
-                   }
-                });
-                document.onfullscreenchange = () => {
-                  this.isFullScreen = !!document.fullscreenElement;
-                };
-            },
-            methods: {
-                scrollTop(m) {
-                    document.documentElement.scroll(0, document.documentElement.scrollTop + m);
-                },
-                reCalc(pageSize) {
-                    this.last = Math.ceil(this.list.length / (this.count * this.row_count));
-                    if(pageSize > this.list.length) pageSize = this.list.length;
-                    this.page = Math.ceil(pageSize / (this.count * this.row_count)) || 1;
-                    this.genArr();
-                    this.genPage();
-                },
-                fullScreen() {
-                    if(document.fullscreenElement) {
-                        document.exitFullscreen();
-                    } else {
-                        document.documentElement.requestFullscreen();
-                    }
-                },
-                initArr() {
-                    this.arr = [];
-                    for(let i = 0; i < this.count; i++) {
-                        this.arr.push([]);
-                    }
-                },
-                sort() {
-                    if(this.m_sort) {
-                        this.list.sort((a, b) => {
-                            return a.size - b.size;
-                        });
-                    } else {
-                        this.list.sort((a, b) => {
-                            return b.size - a.size;
-                        });
-                    }
-                    this.genArr();
-                    this.m_sort = !this.m_sort;
-                },
-                formatSize(size) {
-                    let n = size / 1024 / 1024;
-                    if(n > 1) return n.toFixed(0) + 'MB';
-                    n = size / 1024;
-                    return n.toFixed(0) + 'KB';
-                },
-                clear() {
-                    this.showDelDlg();
-                    fetch('/dir').then(res => {
-                        res.json().then(res => {
-                            this.dirList = res.dirs;
-                            this.m_sel_all = false;
-                            this.sels = {};
-                        });
-                    });
-                },
-                dels(id) {
-                    this.delsImage({ids: [id]});
-                },
-                delsImage(data) {
-                    fetch('/del', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
-                        res.json().then(res => {
-                            if(res.code === 0) {
-                                this.$message('删除成功');
-                                data.ids.forEach(id => {
-                                    for(let i = 0, len = this.list.length; i < len; i++) {
-                                        if(this.list[i].id === id) {
-                                            this.list.splice(i, 1);
-                                            break;
-                                        }
-                                    }
-                                });
-                                this.selEdit = {};
-                                this.m_sels_reversal = false;
-                                this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
-                                if(this.page > this.last) this.page = this.last;
-                                this.genArr();
-                                this.genPage();
-                            } else {
-                                this.$message('删除失败');
-                            }
-                        });
-                    });
-                },
-                delSelImage() {
-                    let ids = Object.keys(this.selEdit);
-                    if(ids.length === 0) return this.$message('请选择');
-                    this.delsImage({ids});
-                },
-                selsImage() {
-                    if(!this.m_sels_reversal) {
-                        this.arr.forEach(d => {
-                           d.forEach(c => {
-                              this.$set(this.selEdit, c.id, true);
-                           });
-                        });
-                    } else {
-                        this.arr.forEach(d => {
-                            d.forEach(c => {
-                                this.$delete(this.selEdit, c.id);
-                            });
-                        });
-                    }
-                    this.m_sels_reversal = !this.m_sels_reversal;
-                },
-                editAll(id) {
-                    if(!this.selEdit[id]) this.$set(this.selEdit, id, true);
-                    else this.$delete(this.selEdit, id);
-                },
-                showDelDlg() {
-                    if(this.delVisible) return;
-                    this.delVisible = true;
-                    setTimeout(() => {
-                        document.addEventListener('click', this.hideDelDlg);
-                    });
-                },
-                hideDelDlg() {
-                    this.delVisible = false;
-                    document.removeEventListener('click', this.hideDelDlg);
-                },
-                selectAll(e) {
-                    this.sels = {};
-                    if(e.target.checked) this.dirList.forEach(d => this.$set(this.sels, d.id, true));
-                },
-                selectRow(e, k) {
-                    if(e.target.checked) this.sels[k] = true;
-                    else this.$delete(this.sels, k);
-                    this.m_sel_all = Object.keys(this.sels).length === this.dirList.length;
-                },
-                del(data) {
-                    if(data.ids.length === 0) return this.$message('请先选择');
-                    this.hideDelDlg();
-                    fetch('/clear', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
-                        res.text().then(res => this.$message(res));
-                    });
-                },
-                delImage() {
-                    this.del({ids: Object.keys(this.sels)});
-                },
-                delImageAndDir() {
-                    this.del({ids: Object.keys(this.sels), s: 1});
-                },
-                loadImage() {
-                    let d = Object.keys(this.sels);
-                    if(d.length === 0) return this.$message('请先选择');
-                    fetch('/loadImage', {method: 'post', body: JSON.stringify({ids: d}), headers: {'content-type': 'application/json'}}).then(res => {
-                       res.json().then(res => {
-                           this.list = res.list;
-                           this.page = 1;
-                          this.genArr();
-                          this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
-                          this.genPage();
-                           this.hideDelDlg();
-                       });
-                    });
-                },
-                reset() {
-                    this.arr = [];
-                    this.list = [];
-                    this.pageList = [];
-                    this.page = 1;
-                    this.last = 1;
-                    this.m_edit = false;
-                    this.m_stop = false;
-                    for(let i = 0; i < this.count; i++) {
-                        this.arr.push([]);
-                    }
-                },
-                genArr() {
-                    this.initArr();
-                    if(this.pager === '1') {
-                        this.list.slice((this.page - 1) * this.row_count * this.count, this.page * this.row_count * this.count).forEach((d, i) => {
-                            let n = i % this.count;
-                            this.arr[n].length < this.row_count && this.arr[n].push(d);
-                        });
-                    } else {
-                        this.list.forEach((d, i) => {
-                            let n = i % this.count;
-                            this.arr[n].push(d);
-                        });
-                    }
-                },
-                pageTo(page, i) {
-                    if(page === '...') {
-                        if(i === 1) {
-                            page = this.page - 7 > 0 ? this.page - 7 : 1;
-                        } else {
-                            page = this.page + 7 > this.last ? this.last : this.page + 7;
-                        }
-                    }
-                    if(page < 1) page = 1;
-                    else if(page > this.last - 1) page = this.last;
-                    if(page === this.page) return;
-                    this.m_sels_reversal = false;
-                    this.page = page;
-                    this.genArr();
-                    this.genPage();
-                },
-                genPage() {
-                    if (this.pager === '2') return;
-                    this.pageList = [];
-                    let start, end;
-                    if (this.last <= 7) {
-                        for (let i = 1; i <= this.last; i++) {
-                            this.pageList.push(i);
-                        }
-                    } else {
-                        this.pageList.push(1);
-                        start = this.page - 2 > 1 ? this.page - 2 : 2;
-                        if(start > 2) this.pageList.push('...');
-                        end = this.page + 2 < this.last - 1 ? this.page + 2 : this.last - 1;
-                        if(this.page < 4) end = 6;
-                        if(this.page > this.last - 3) start = this.last - 5;
-                        for(let i = start; i <= end; i++) {
-                            this.pageList.push(i);
-                        }
-                        if(end < this.last - 1) this.pageList.push('...');
-                        this.pageList.push(this.last);
-                    }
-                },
-                start() {
-                    if(!/^https?:\/\//.test(this.url)) return this.$message('Invalid Url');
-                    this.reset();
-                    send({url: this.url, process: this.process, size: this.size, delay: this.delay, prop: this.prop, referer: this.referer === '1' ? 1 : 0});
-                    this.disabled = true;
-                    fetch('/clearLogs');
-                },
-                add(url) {
-                    if(this.list.some(d => d.id === url.id)) return;
-                    let n = this.list.length % this.count;
-                    let pageSize = this.row_count * this.count;
-                    if(this.pager === '1') {
-                        this.arr[n].length < this.row_count && this.arr[n].push(url);
-                    } else {
-                        this.arr[n].push(url);
-                    }
-                    this.list.push(url);
-                    let c = Math.ceil(this.list.length / pageSize);
-                    if(c !== this.last) {
-                        this.last = c;
-                        this.genPage();
-                    }
-                },
-                stop() {
-                    this.m_stop = true;
-                    send({stop: 1});
-                },
-                selAll(e) {
-                    e.target.select();
-                }
-            },
-            mounted() {
-            }
-        });
-        function send(o) {
-            ws.send(JSON.stringify(o));
-        }
-        let once = false;
-        function connect() {
-            ws = new WebSocket('ws://127.0.0.1:3002');
-            ws.onopen = function() {
-                app.disabled = false;
-                app.ready = true;
-                console.log('connected');
-            };
-            ws.onmessage = function(data) {
-                let ob = JSON.parse(data.data);
-                if(ob.end) return app.disabled = false;
-                if(ob.err) {
-                    if(ob.once) {
-                        once = true;
-                        app.errMes = ob.err;
-                    }
-                    return app.$message(ob.err);
-                }
-                app.add(ob);
-            };
-            ws.onclose = function() {
-                app.ready = false;
-                !once && setTimeout(function() {
-                    connect();
-                }, 5000);
-            };
-        }
-        connect();
-    </script>
+    <script src="/component.js" type="text/javascript"></script>
+    <script src="/index.js" type="text/javascript"></script>
 </body>
 </html>

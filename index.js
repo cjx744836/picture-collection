@@ -10,6 +10,7 @@ require('./socket');
 
 server.use(express.static('js'));
 server.use(express.static('img'));
+server.use(express.static('css'));
 server.use(bodyParser.json());
 
 server.get('/', (req, res) => {

@@ -13,6 +13,11 @@ let index = 0;
 const MAX = 100000;
 let one = false;
 let sid = 0;
+let cookie = '';
+let timeout = {
+        resTimeout: 60000,
+        reqTimeout: 5000,
+    };
 
 ws.createServer(connection => {
     if(one) {
@@ -34,9 +39,11 @@ ws.createServer(connection => {
                 reset();
             });
             size = o.size * 1024 || 0;
-            max_process = Number(o.process) || max_process;
+            max_process = Number(o.process) || 8;
             delay = o.delay || 0;
-            createParser(o.url, o.prop, connection);
+            cookie = o.cookie;
+            timeout.reqTimeout = Number(o.reqTimeout) || 5000;
+            timeout.resTimeout = Number(o.resTimeout) || 60000;
             let url = new URL(o.url);
             let dir = path.resolve(__dirname, 'img', url.host);
             sid = utils.genHash(url.host);
@@ -44,6 +51,7 @@ ws.createServer(connection => {
                 fs.mkdirSync(dir);
             }
             controller.saveHost(sid, url.host);
+            createParser(o.url, o.prop, connection, o.referer, url.protocol + '//' + url.hostname);
             for(let i = 0; i < max_process; i++) {
                 createImageCollection(connection, url.protocol + '//' + url.hostname, i, o.referer, url.host);
             }
@@ -57,13 +65,11 @@ ws.createServer(connection => {
 function reset() {
     imageURL = [];
     index = 0;
-    delay = 0;
-    max_process = 8;
 }
 
-function createParser(url, prop, connection) {
+function createParser(url, prop, connection, openReferer, referer) {
     let child = fork('./parser.js', {windowsHide: true});
-    child.send({url, delay, prop});
+    child.send({url, delay, prop, cookie, timeout, openReferer, referer});
     childManager.add(child);
     child.once('kill', () => {
         childManager.kill(child);
@@ -132,7 +138,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
         }, delay);
     }
     function send() {
-        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir})
+        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, timeout})
     }
     delaySend(delay + i * 1000);
 }

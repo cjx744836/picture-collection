@@ -1,0 +1,344 @@
+html, body {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+html {
+    overflow: hidden;
+    height: 100vh;
+}
+body {
+    overflow: visible;
+}
+* {
+    outline: 0;
+    user-select: none;
+}
+input {
+    user-select: auto;
+}
+.img {
+    display: flex;
+    padding-bottom: 30px;
+}
+.full .img {
+    padding-bottom: 0;
+}
+.img > div {
+    padding: 5px;
+    font-size: 0;
+}
+.img img {
+    width: 100%;
+}
+[v-cloak] {
+    display: none;
+}
+.ops {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+    transition-duration: 0.3s;
+    transition-delay: 1s;
+}
+.ops  * {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+input {
+    width: 500px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 5px;
+    outline: 0;
+}
+input[type=checkbox] {
+    width: inherit;
+}
+input:focus, select:focus {
+    border: 1px solid #3da0ff;
+}
+button {
+    background: linear-gradient(180deg, #3da0ff, #1c608e 75%);
+    color: #fff;
+    border: 0;
+    padding: 5px 10px;
+    transition-duration: .1s;
+    border-radius: 5px;
+}
+button:active {
+    box-shadow: inset 0 6px 10px 0 #276e8a;
+    color: #e9eff1;
+}
+button.disabled {
+    cursor: not-allowed;
+    background: #e0e0e0;
+    color: #a2a2a2;
+}
+.viewer-backdrop {
+    background: rgba(0,0,0,0.95);
+}
+.img-inner {
+    position: relative;
+    margin-bottom: 10px;
+}
+.img-inner > a {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 5px;
+    border: 1px solid #666;
+    color: #666;
+    background: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+}
+span > i {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    line-height: 13px;
+    font-size: 12px;
+    font-weight: bold;
+    background: #b1b1b1;
+    color: #fff;
+    text-align: center;
+    border-radius: 50%;
+    font-style: normal;
+    margin: 0 3px;
+    cursor: default;
+}
+.tips {
+    background: #e9eff1;
+    padding: 5px;
+    font-size: 14px;
+    border-radius: 3px;
+    position: fixed;
+    z-index: 5;
+}
+.message {
+    background: #3da0ff;
+    padding: 15px 20px;
+    color: #fff;
+    font-size: 15px;
+    border-radius: 3px;
+    position: fixed;
+    z-index: 5;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 100px;
+}
+.slide-enter-active, .slide-leave-active {
+    transition-duration: 0.3s;
+}
+.slide-enter, .slide-leave-to {
+    opacity: 0;
+    margin-top: -10px;
+}
+.loading {
+    width: 15px;
+    height: 15px;
+    border: 5px solid #e9eff1;
+    border-radius: 50%;
+    position: relative;
+    animation: circle 2s linear infinite;
+    display: inline-block;
+}
+.loading:after {
+    display: inline-block;
+    content: '';
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    border-top: 5px solid #3da0ff;
+    border-bottom: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-left: 5px solid transparent;
+    border-radius: 50%;
+}
+@keyframes circle {
+    0% {transform: rotate(0)}
+    100% {transform: rotate(360deg)}
+}
+.page {
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: rgba(255,255,255,0.9);
+    transition-duration: 0.3s;
+    transition-delay: 1s;
+}
+.page > span {
+    background: linear-gradient(0, #eaeaea, #fff);
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+    padding: 5px;
+    margin: 5px;
+    min-width: 22px;
+    display: inline-block;
+}
+.page > span:hover {
+    color: #2e82ca;
+    border-color: #2e82ca;
+}
+.page > span.active {
+    color: #fff;
+    background: #2e82ca;
+    border: 0;
+}
+.page > span.total {
+    color: inherit;
+    background: none;
+    border: 0;
+}
+select {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 5px;
+}
+.ops.full {
+    position: fixed;
+    z-index: 3;
+    width: 100%;
+    transform: translateY(-100%);
+}
+.page.full {
+    z-index: 3;
+    transform: translateY(100%);
+}
+.ops.full.top, .page.full.top {
+    transition-delay: 0s;
+    transform: translateY(0);
+}
+.app.full {
+    background: #000;
+    min-height: 100vh;
+}
+span {
+    user-select: none;
+}
+.dle-dlg-wrap {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    top: 0;
+}
+.del-dlg-bg {
+    width: 100%;
+    height: 100%;
+}
+.dle-dlg {
+    width: 500px;
+    background: #fff;
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    margin-left: -250px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.dle-dlg .item {
+    display: flex;
+    padding: 3px 10px;
+}
+.dle-dlg .item div {
+    flex: 1 1 auto;
+}
+.dle-dlg > .item {
+    border-bottom: 1px solid #ccc;
+}
+.dle-dlg .item div:last-child {
+    width: 70px;
+    flex: 0 0 auto;
+    text-align: right;
+}
+.dle-container {
+    max-height: 500px;
+    overflow: auto;
+}
+.dle-dlg .item div:first-child {
+    width: 60px;
+    flex: 0 0 auto;
+}
+.dle-btns {
+    text-align: center;
+    padding: 5px 0;
+}
+.edit {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #00000055;
+}
+.edit.active {
+    background: #2b86b1d9;
+}
+.edit span {
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    padding: 5px;
+}
+.ops a {
+    color: #3da0ff;
+    text-decoration: none;
+}
+.set-dlg {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    top: 0;
+}
+.set-dlg-bg {
+    width: 100%;
+    height: 100%;
+}
+.set-dlg-container {
+    width: 500px;
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    margin-left: -250px;
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+.set-item {
+    display: flex;
+    margin: 10px 0;
+    align-items: center;
+}
+.set-item > * {
+    flex: 1 1 auto;
+}
+.set-item span {
+    display: inline-block;
+    width: 120px;
+    text-align: right;
+    flex: 0 0 auto;
+    margin-right: 10px;
+}
+.ops .icon-set {
+    font-weight: bold;
+    font-size: 25px;
+}
+img .iconfont {
+    font-size: 20px;
+    color: #fff;
+}
+button .iconfont {
+    font-size: 12px;
+}
+.dle-container .item div {
+    user-select: text;
+}
