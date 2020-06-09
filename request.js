@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 let reqTIMEOUT = 5000;
 let resTIMEOUT = 60000;
+let retry = 3;
 
 let options = {
     method: 'get',
@@ -12,7 +13,7 @@ let options = {
     rejectUnauthorized: false
 };
 let redirect_count = 0;
-let retry = 0;
+let retry_count = 0;
 
 function isHttps(host) {
     return /^https/.test(host);
@@ -21,23 +22,23 @@ function isHttps(host) {
 function get(url, options) {
     return new Promise((resolve, reject) => {
             let adapter = isHttps(url) ? https : http;
-            let err = '', data = '', redirect = '';
+            let err = '', data = '', redirect = '', timeout = '';
             let rawData = Buffer.alloc(0);
             let req = adapter.request(url, options, function(res) {
                 let code = res.statusCode;
                 if(code >= 300 && code < 400) {
                     if(res.headers.location) {
                         redirect_count++;
-                        if (redirect_count > 5) return err = new Error(`重定向次数太多 ${url}`);
+                        if (redirect_count > 5) return err = new Error(`重定向次数太多`);
                         redirect = new URL(res.headers.location, url);
                     } else {
-                        err = new Error(`重定向失败 ${url}`);
+                        err = new Error(`重定向失败`);
                     }
                 } else {
-                    if(code !== 200) return err = new Error(`错误状态码 ${code} ${url}`);
+                    if(code !== 200) return err = new Error(`错误状态码${code}`);
                     res.setTimeout(resTIMEOUT, () => {
-                        res.destroy();
-                        err = new Error(`响应超时 ${url}`);
+                        res.destroy(new Error(`响应超时`));
+                        timeout = 1;
                     });
                     res.on('data', chunk => {
                         rawData = Buffer.concat([rawData, chunk], rawData.length + chunk.length);
@@ -46,26 +47,49 @@ function get(url, options) {
                         data = {data: rawData, url: url, type: res.headers['content-type']};
                     });
                     res.on('error', e => {
-                        if(res.destroyed) return;
-                        err = {message: `${e.message} ${url}`};
+                        parseError(e);
+                        err = {message: `${e.message}`};
                     });
                 }
             });
         req.setTimeout(reqTIMEOUT, () => {
-            req.destroy();
-            err = new Error(`请求超时 ${url}`);
+            req.destroy(new Error(`请求超时`));
+            timeout = 1;
         });
         req.on('error', (e) => {
-            if(req.destroyed) return;
-            err = {message: `${e.message} ${url}`};
+            parseError(e);
+            err = {message: `${e.message}`};
         });
         req.on('close', () => {
+            if(err) err.url = url;
+            if(timeout) {
+                retry_count++;
+                if(retry_count < retry) return get(url, options).then(res => resolve(res)).catch(err => reject(err));
+                return reject(err);
+            }
             if(redirect) return get(redirect, options).then(res => resolve(res)).catch(err => reject(err));
             if(err) return reject(err);
             resolve(data);
         });
         req.end();
     });
+}
+
+function parseError(e) {
+    switch(e.code) {
+        case 'ENOTFOUND':
+            e.message = `无法解析域名`;
+            break;
+        case 'ECONNREFUSED':
+            e.message = `服务器拒绝连接`;
+            break;
+        case 'ECONNRESET':
+            e.message = `服务器断开连接`;
+            break;
+        case 'ETIMEDOUT':
+            e.message = `连接超时`;
+            break;
+    }
 }
 
 function merge(o, s) {
@@ -84,10 +108,12 @@ function merge(o, s) {
     });
 }
 
-module.exports = function(url, ops, timeout) {
+module.exports = function(url, ops, otherops) {
     redirect_count = 0;
-    reqTIMEOUT = timeout.reqTimeout || reqTIMEOUT;
-    resTIMEOUT = timeout.resTimeout || resTIMEOUT;
+    retry_count = 0;
+    reqTIMEOUT = otherops.reqTimeout || reqTIMEOUT;
+    resTIMEOUT = otherops.resTimeout || resTIMEOUT;
+    retry = otherops.retry || retry;
     merge(options, ops);
     return get(url, options);
 };

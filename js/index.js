@@ -65,7 +65,8 @@ let app = new Vue({
         m_set_visible: false,
         cookie: '',
         reqTimeout: 5000,
-        resTimeout: 60000
+        resTimeout: 60000,
+        retry: 3,
     },
     watch: {
         m_edit() {

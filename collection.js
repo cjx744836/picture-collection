@@ -22,14 +22,14 @@ process.on('message', arg => {
    let ops = {headers: {}};
    if(arg.openReferer) ops.headers.referer = arg.referer;
    if(arg.cookie) ops.headers.cookie = arg.cookie;
-   request(arg.url.imgUrl, ops, arg.timeout).then(res => {
-        if(!isValidType(res.type)) return process.send({err: `[${process.pid}] 图片类型错误 ${res.url}`});
-        if(res.data.length < arg.size) return process.send({err: `[${process.pid}] 图片大小过滤 ${res.url}`});
+   request(arg.url.imgUrl, ops, arg.otherops).then(res => {
+        if(!isValidType(res.type)) return process.send({err: `pid[${process.pid}] 图片类型错误`, url: res.url});
+        if(res.data.length < arg.size) return process.send({err: `pid[${process.pid}] 图片大小过滤`, url: res.url});
         let hash = utils.genHash(res.data);
         let ext = getType(res.type);
         fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
         process.send({hash: hash, ext: ext, sUrl: arg.url.sUrl, size: res.data.length});
    }).catch(err => {
-      process.send({err: `[${process.pid}] ${err.message}`});
+      process.send({err: `pid[${process.pid}] ${err.message}`, url: err.url});
    });
 });

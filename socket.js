@@ -14,9 +14,10 @@ const MAX = 100000;
 let one = false;
 let sid = 0;
 let cookie = '';
-let timeout = {
+let otherops = {
         resTimeout: 60000,
         reqTimeout: 5000,
+        retry: 3
     };
 
 ws.createServer(connection => {
@@ -42,8 +43,9 @@ ws.createServer(connection => {
             max_process = Number(o.process) || 8;
             delay = o.delay || 0;
             cookie = o.cookie;
-            timeout.reqTimeout = Number(o.reqTimeout) || 5000;
-            timeout.resTimeout = Number(o.resTimeout) || 60000;
+            otherops.reqTimeout = Number(o.reqTimeout) || 5000;
+            otherops.resTimeout = Number(o.resTimeout) || 60000;
+            otherops.retry = Number(o.retry) || 3;
             let url = new URL(o.url);
             let dir = path.resolve(__dirname, 'img', url.host);
             sid = utils.genHash(url.host);
@@ -69,7 +71,7 @@ function reset() {
 
 function createParser(url, prop, connection, openReferer, referer) {
     let child = fork('./parser.js', {windowsHide: true});
-    child.send({url, delay, prop, cookie, timeout, openReferer, referer});
+    child.send({url, delay, prop, cookie, otherops, openReferer, referer});
     childManager.add(child);
     child.once('kill', () => {
         childManager.kill(child);
@@ -84,7 +86,7 @@ function createParser(url, prop, connection, openReferer, referer) {
             return childManager.onOver(() => {
                connection.sendText(JSON.stringify({err: arg.err}));
             });
-            return controller.saveLog(arg.err);
+            return controller.saveLog(arg.err + ` <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         }
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
@@ -117,7 +119,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
                 if(over) return childManager.kill(child);
                 return delaySend(3000);
             }
-            controller.saveLog(arg.err);
+            controller.saveLog(arg.err + ` <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         } else {
             let filename = `${arg.hash}${arg.ext}`;
             let data = {
@@ -138,7 +140,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
         }, delay);
     }
     function send() {
-        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, timeout})
+        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, otherops})
     }
     delaySend(delay + i * 1000);
 }

@@ -59,6 +59,9 @@
                     <div class="set-item">
                         <span>响应超时(ms)<i v-title="'获取网站数据的时间，超时中断连接'">?</i></span><input type="text" v-model.number="resTimeout" @click="selAll">
                     </div>
+                    <div class="set-item">
+                        <span>超时重连次数<i v-title="'超时重连次数'">?</i></span><input type="text" v-model.number="retry" @click="selAll">
+                    </div>
                 </div>
             </div>
         </transition>
