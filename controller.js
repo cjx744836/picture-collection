@@ -1,6 +1,8 @@
 const query = require('./sql');
 const utils = require('./utils');
 const path = require('path');
+const MAX_LOG = 5000;
+let logs_count = 0;
 
 function saveHost(id, host) {
     let sql = `insert into tb_host (id, name) value('${id}', '${host}')`;
@@ -69,10 +71,20 @@ function clearLogs() {
 }
 
 function saveLog(err) {
+    logs_count++;
     let sql = `insert into tb_logs(err) value('${err}')`;
     query(sql);
+    if(logs_count > MAX_LOG) {
+        sql = `delete from tb_logs ORDER BY create_time asc limit 3000`;
+        query(sql);
+        logs_count -= 3000;
+    }
+}
+
+function clearCount() {
+    logs_count = 0;
 }
 
 module.exports = {
-    saveHost, saveFile, getDirs, delFiles, getList, delFile, logs, saveLog, clearLogs
+    saveHost, saveFile, getDirs, delFiles, getList, delFile, logs, saveLog, clearLogs, clearCount
 };

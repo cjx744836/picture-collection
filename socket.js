@@ -39,6 +39,7 @@ ws.createServer(connection => {
                 connection.sendText(JSON.stringify({end: 1}));
                 reset();
             });
+            controller.clearCount();
             size = o.size * 1024 || 0;
             max_process = Number(o.process) || 8;
             delay = o.delay || 0;
@@ -88,7 +89,7 @@ function createParser(url, prop, connection, openReferer, referer) {
             });
             return controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         }
-        controller.saveLog(`[解析进程] - [${child.pid}] - 解析图片地址${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
+        controller.saveLog(`[parser] - 解析图片${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
                 imageURL.length < MAX && imageURL.push({imgUrl: d, sUrl: arg.sUrl});
@@ -119,7 +120,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
             if(arg.code === 0) {
                 controller.saveLog(arg.err);
                 if(over) return childManager.kill(child);
-                return delaySend(3000);
+                return delaySend(5000);
             }
             controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         } else {

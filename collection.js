@@ -18,18 +18,18 @@ function getType(type) {
 }
 
 process.on('message', arg => {
-   if(!arg.url) return process.send({err: `[图片下载进程] - [${arg.index}] - [${process.pid}] - 等待解析进程获取图片地址【如果解析进程有返回解析的图片个数，又多次出现这条消息，可能是图片地址重复或者img标签上有自定义属性的地址需要在设置里面指定属性】`, code: 0});
+   if(!arg.url) return process.send({err: `[collection] - [${arg.index}] - 等待parser解析图片地址【原因：图片地址重复或没有解析到图片地址或需要指定img属性】`, code: 0});
    let ops = {headers: {}};
    if(arg.openReferer) ops.headers.referer = arg.referer;
    if(arg.cookie) ops.headers.cookie = arg.cookie;
    request(arg.url.imgUrl, ops, arg.otherops).then(res => {
-        if(!isValidType(res.type)) return process.send({err: `[图片下载进程] - [${arg.index}] - [${process.pid}] - 图片类型错误`, url: res.url});
-        if(res.data.length < arg.size) return process.send({err: `[图片下载进程] - [${arg.index}] - [${process.pid}] - 图片大小过滤`, url: res.url});
+        if(!isValidType(res.type)) return process.send({err: `[colloection] - [${arg.index}] - 图片类型错误`, url: res.url});
+        if(res.data.length < arg.size) return process.send({err: `[colloection] - [${arg.index}] - 图片大小过滤`, url: res.url});
         let hash = utils.genHash(res.data);
         let ext = getType(res.type);
         fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
         process.send({hash: hash, ext: ext, sUrl: arg.url.sUrl, size: res.data.length});
    }).catch(err => {
-      process.send({err: `[图片下载进程] - [${arg.index}] - [${process.pid}] - ${err.message}`, url: err.url});
+      process.send({err: `[colloection] - [${arg.index}] - ${err.message}`, url: err.url});
    });
 });
