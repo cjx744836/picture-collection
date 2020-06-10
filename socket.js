@@ -124,16 +124,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
             }
             controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         } else {
-            let filename = `${arg.hash}${arg.ext}`;
-            let data = {
-                    sid,
-                    id: arg.hash,
-                    filesize: arg.size,
-                    filename: filename,
-                    surl: arg.sUrl
-                };
-            controller.saveFile(data);
-            connection.sendText(JSON.stringify({imgUrl: '/' + dir + '/' + filename, sUrl: arg.sUrl, size: arg.size, id: arg.hash}));
+            connection.sendText(JSON.stringify({imgUrl: arg.imgUrl, sUrl: arg.sUrl, size: arg.size, id: arg.hash}));
         }
         delaySend(delay);
     });
@@ -143,7 +134,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
         }, delay);
     }
     function send() {
-        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, otherops, index: i})
+        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, otherops, index: i, sid})
     }
     delaySend(delay + i * 1000);
 }
