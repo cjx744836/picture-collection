@@ -16,14 +16,14 @@ function saveFile(data) {
 
 async function delFiles(ids, s) {
     let dirs = [];
-    let sql = `select name from tb_host where find_in_set(id, '${ids.join()}')`;
+    let sql = `select name from tb_host where id in ('${ids.join()}')`;
     let data = await query(sql);
     if(data.errCode) return false;
     dirs = data.map(d => path.resolve(__dirname, 'img', d.name));
     if(s) {
-        sql = `delete from tb_host where find_in_set(id, '${ids.join()}')`
+        sql = `delete from tb_host where id in ('${ids.join('\',\'')}')`
     } else {
-        sql = `delete from tb_file where find_in_set(sid, '${ids.join()}')`;
+        sql = `delete from tb_file where sid in ('${ids.join('\',\'')}')`;
     }
     data = await query(sql);
     if(data.errCode) return false;
@@ -39,19 +39,19 @@ async function getDirs() {
 }
 
 async function getList(ids) {
-    let sql = `select id, CONCAT('/', (select name from tb_host where id=t.sid), '/', filename) imgUrl, filesize size, sUrl from tb_file t where find_in_set(sid, '${ids.join()}')`;
+    let sql = `select id, CONCAT('/', (select name from tb_host where id=t.sid), '/', filename) imgUrl, filesize size, sUrl from tb_file t where sid in ('${ids.join('\',\'')}')`;
     let data = await query(sql);
     if(data.errCode) return {list: []};
     return {list: data};
 }
 
 async function delFile(ids) {
-    let sql = `select CONCAT(t2.name, '/', t1.filename) dir from tb_file t1 LEFT JOIN tb_host t2 on t1.sid = t2.id where FIND_IN_SET(t1.id, '${ids.join()}')`;
+    let sql = `select CONCAT(t2.name, '/', t1.filename) dir from tb_file t1 LEFT JOIN tb_host t2 on t1.sid = t2.id where t1.id in ('${ids.join('\',\'')}')`;
     let dirs = [];
     let data = await query(sql);
     if(data.errCode) return false;
     dirs = data;
-    sql = `delete from tb_file where find_in_set(id, '${ids.join()}')`;
+    sql = `delete from tb_file where id in ('${ids.join('\',\'')}')`;
     data = await query(sql);
     if(data.errCode) return false;
     dirs.forEach(d => utils.delFiles(path.resolve(__dirname, 'img', d.dir)));

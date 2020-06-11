@@ -67,6 +67,7 @@ let app = new Vue({
         reqTimeout: 5000,
         resTimeout: 60000,
         retry: 3,
+        loadingVisible: false
     },
     watch: {
         m_edit() {
@@ -137,6 +138,32 @@ let app = new Vue({
         };
     },
     methods: {
+        request(ops) {
+            this.loadingVisible = true;
+            return new Promise((resolve, reject) => {
+                fetch(ops.url, {
+                    method: ops.method,
+                    body: ops.param,
+                    headers: {
+                        'content-type': 'application/json'
+                    }
+                }).then(res => {
+                    let data;
+                    try {
+                        data = res.json();
+                    } catch(e) {
+                        data = res.text();
+                    }
+                    data.then(res => {
+                       resolve(res);
+                    });
+                    this.loadingVisible = false;
+                }).catch(err => {
+                   this.loadingVisible = false;
+                   reject(err);
+                });
+            });
+        },
         scrollTop(m) {
             document.documentElement.scroll(0, document.documentElement.scrollTop + m);
         },
@@ -181,40 +208,43 @@ let app = new Vue({
         },
         clear() {
             this.showDelDlg();
-            fetch('/dir').then(res => {
-                res.json().then(res => {
-                    this.dirList = res.dirs;
-                    this.m_sel_all = false;
-                    this.sels = {};
-                });
+            this.request({
+                url: '/dir',
+                method: 'get'
+            }).then(res => {
+                this.dirList = res.dirs;
+                this.m_sel_all = false;
+                this.sels = {};
             });
         },
         dels(id) {
             this.delsImage({ids: [id]});
         },
         delsImage(data) {
-            fetch('/del', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
-                res.json().then(res => {
-                    if(res.code === 0) {
-                        this.$message('删除成功');
-                        data.ids.forEach(id => {
-                            for(let i = 0, len = this.list.length; i < len; i++) {
-                                if(this.list[i].id === id) {
-                                    this.list.splice(i, 1);
-                                    break;
-                                }
+            this.request({
+                url: '/del',
+                method: 'post',
+                param: JSON.stringify(data)
+            }).then(res => {
+                if(res.code === 0) {
+                    this.$message('删除成功');
+                    data.ids.forEach(id => {
+                        for(let i = 0, len = this.list.length; i < len; i++) {
+                            if(this.list[i].id === id) {
+                                this.list.splice(i, 1);
+                                break;
                             }
-                        });
-                        this.selEdit = {};
-                        this.m_sels_reversal = false;
-                        this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
-                        if(this.page > this.last) this.page = this.last;
-                        this.genArr();
-                        this.genPage();
-                    } else {
-                        this.$message('删除失败');
-                    }
-                });
+                        }
+                    });
+                    this.selEdit = {};
+                    this.m_sels_reversal = false;
+                    this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
+                    if(this.page > this.last) this.page = this.last;
+                    this.genArr();
+                    this.genPage();
+                } else {
+                    this.$message('删除失败');
+                }
             });
         },
         delSelImage() {
@@ -265,8 +295,13 @@ let app = new Vue({
         del(data) {
             if(data.ids.length === 0) return this.$message('请先选择');
             this.hideDelDlg();
-            fetch('/clear', {method: 'post', body: JSON.stringify(data), headers: {'content-type': 'application/json'}}).then(res => {
+            this.request({
+                url: '/clear',
+                method: 'post',
+                param: JSON.stringify(data)
+            }).then(res => {
                 res.text().then(res => this.$message(res));
+
             });
         },
         delImage() {
@@ -278,15 +313,17 @@ let app = new Vue({
         loadImage() {
             let d = Object.keys(this.sels);
             if(d.length === 0) return this.$message('请先选择');
-            fetch('/loadImage', {method: 'post', body: JSON.stringify({ids: d}), headers: {'content-type': 'application/json'}}).then(res => {
-                res.json().then(res => {
-                    this.list = res.list;
-                    this.page = 1;
-                    this.genArr();
-                    this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
-                    this.genPage();
-                    this.hideDelDlg();
-                });
+            this.request({
+                url: '/loadImage',
+                method: 'post',
+                param: JSON.stringify({ids: d})
+            }).then(res => {
+                this.list = res.list;
+                this.page = 1;
+                this.genArr();
+                this.last = Math.ceil(this.list.length / (this.row_count * this.count)) || 1;
+                this.genPage();
+                this.hideDelDlg();
             });
         },
         reset() {

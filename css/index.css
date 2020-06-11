@@ -342,3 +342,55 @@ button .iconfont {
 .dle-container .item div {
     user-select: text;
 }
+.req-loading {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.7);
+    z-index: 3;
+}
+.req-loading svg {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin: -20px 0 0 -20px;
+}
+.circular {
+    height: 42px;
+    width: 42px;
+    animation: loading-rotate 2s linear infinite;
+}
+.path {
+    animation: loading-dash 1.5s ease-in-out infinite;
+    stroke-dasharray: 90,150;
+    stroke-dashoffset: 0;
+    stroke-width: 2;
+    stroke: #409eff;
+    stroke-linecap: round;
+}
+@keyframes loading-rotate {
+    100% {
+        transform: rotate(1turn);
+    }
+}
+@keyframes loading-dash {
+    0% {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -40px;
+    }
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -120px;
+    }
+}
+.fade-enter-active, .fade-leave-active {
+    transition-duration: 0.3s;
+}
+.fade-enter, .fade-leave-to {
+    opacity: 0;
+}

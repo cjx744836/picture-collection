@@ -105,6 +105,11 @@
             <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :class="{active:page===k}">{{k}}</span>
             <span class="total">共{{list.length}}个</span>
         </div>
+        <transition name="fade">
+            <div class="req-loading" v-if="loadingVisible">
+                <svg viewBox="25 25 50 50" class="circular"><circle cx="50" cy="50" r="20" fill="none" class="path"></circle></svg>
+            </div>
+        </transition>
     </div>
     <script src="/vue.min.js" type="text/javascript"></script>
     <script src="/viewer.min.js" type="text/javascript"></script>
