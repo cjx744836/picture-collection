@@ -1,5 +1,6 @@
 const http = require('http');
 const https = require('https');
+const zlib = require('zlib');
 let reqTIMEOUT = 5000;
 let resTIMEOUT = 60000;
 let retry = 3;
@@ -44,6 +45,8 @@ function get(url, options) {
                         rawData = Buffer.concat([rawData, chunk], rawData.length + chunk.length);
                     });
                     res.on('end', () => {
+                        if(isZip(res.headers['content-encoding'])) rawData = zlib.unzipSync(rawData);
+                        else if(isDeflate(res.headers['content-encoding'])) rawData = zlib.undeflateSync(rawData);
                         data = {data: rawData, url: url, type: res.headers['content-type']};
                     });
                     res.on('error', e => {
@@ -73,6 +76,14 @@ function get(url, options) {
         });
         req.end();
     });
+}
+
+function isZip(encoding) {
+    return /zip/i.test(encoding);
+}
+
+function isDeflate(encoding) {
+    return /deflate/i.test(encoding);
 }
 
 function parseError(e) {

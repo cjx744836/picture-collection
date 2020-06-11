@@ -75,18 +75,21 @@ function createParser(url, prop, connection, openReferer, referer) {
     child.send({url, delay, prop, cookie, otherops, openReferer, referer});
     childManager.add(child);
     child.once('kill', () => {
+        controller.saveLog(`[parser] - 进程退出`);
         childManager.kill(child);
     });
     child.on('message', arg => {
         if(arg.over) {
+            controller.saveLog(`[parser] - 进程退出`);
             childManager.kill(child);
             return childManager.over();
         }
         if(arg.err) {
-            if(arg.code === 0)
-            return childManager.onOver(() => {
-               connection.sendText(JSON.stringify({err: arg.err}));
-            });
+            if(arg.code === 0) {
+                return childManager.onOver(() => {
+                    connection.sendText(JSON.stringify({err: arg.err}));
+                });
+            }
             return controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         }
         controller.saveLog(`[parser] - 解析图片${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
@@ -110,6 +113,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
     childManager.add(child);
     child.once('kill', () => {
         killed = true;
+        controller.saveLog(`[colloection] - [${i}] - 进程退出`);
         childManager.kill(child);
     });
     child.once('over', () => {
@@ -118,8 +122,11 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
     child.on('message', arg => {
         if(arg.err) {
             if(arg.code === 0) {
+                if(over) {
+                    controller.saveLog(`[colloection] - [${i}] - 进程退出`);
+                    return childManager.kill(child);
+                }
                 controller.saveLog(arg.err);
-                if(over) return childManager.kill(child);
                 return delaySend(5000);
             }
             controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
