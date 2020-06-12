@@ -15,16 +15,17 @@
             <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR" @keydown.prevent><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC" @keydown.prevent><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
             <span>图片网址<i v-title="'如果开启了采集指定网址，将支持数字和字母范围写法,比如[1-90]和[a-z]范围写法不能出现空格且字母只支持单个不支持[aa-zz]，这对于采集连续性的网址很有用，多个地址用英文逗号隔开'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
             <span v-if="ready">
-                <button @click="start" v-if="!disabled&&!m_edit">开始</button>
+                <button key="1" @click="start" v-if="!disabled&&!m_edit">开始</button>
                 <span v-if="disabled" class="loading"></span>
-                <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
-                <button @click="clear" v-if="!disabled&&!m_edit"><span class="icon-load iconfont"></span>删除/加载图片</button>
-                <button @click="sort"><span class="icon-sort iconfont"></span>大小排序</button>
-                <button @click="sortByTime"><span class="icon-sort iconfont"></span>时间排序</button>
-                <button @click="m_edit=!m_edit"><span class="iconfont icon-edit"></span>{{!m_edit?'编辑':'退出编辑'}}</button>
-                <button @click="delSelImage" v-if="m_edit"><span class="iconfont icon-delete"></span>删除图片</button>
-                <button @click="selsImage" v-if="m_edit">全选</button>
-                <button @click="fullScreen"><span class="icon-fullscreen iconfont"></span>{{isFullScreen?'退出全屏':'全屏'}}</button>
+                <button key="2" v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
+                <button key="3" @click="clear" v-if="!disabled&&!m_edit"><span class="icon-load iconfont"></span>删除/加载</button>
+                <button key="4" v-title="'按图片的大小排序'" @click="sort"><span class="icon-sort iconfont"></span>大小</button>
+                <button key="5" v-title="'按采集图片的时间排序'" @click="sortByTime"><span class="icon-sort iconfont"></span>时间</button>
+                <button key="6" v-title="'按采集来源网址排序可以让图片内容更连贯'" @click="sortBySource"><span class="icon-sort iconfont"></span>来源</button>
+                <button key="7" @click="m_edit=!m_edit"><span class="iconfont icon-edit"></span>{{!m_edit?'编辑':'退出编辑'}}</button>
+                <button key="8" @click="delSelImage" v-if="m_edit"><span class="iconfont icon-delete"></span>删除图片</button>
+                <button key="9" @click="selsImage" v-if="m_edit">全选</button>
+                <button key="10" @click="fullScreen"><span class="icon-fullscreen iconfont"></span>{{isFullScreen?'退出全屏':'全屏'}}</button>
                 <a href="/logs" target="_blank" title="最近1000条错误日志">日志</a>
             </span>
             <span v-else>{{errMes}}</span>

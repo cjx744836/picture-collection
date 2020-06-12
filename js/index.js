@@ -188,6 +188,19 @@ let app = new Vue({
                 this.arr.push([]);
             }
         },
+        sortBySource() {
+            if(this.m_sort) {
+                this.list.sort((a, b) => {
+                    return a.sUrl.localeCompare(b.sUrl);
+                });
+            } else {
+                this.list.sort((a, b) => {
+                    return b.sUrl.localeCompare(a.sUrl);
+                });
+            }
+            this.genArr();
+            this.m_sort = !this.m_sort;
+        },
         sortByTime() {
             if(this.m_sort) {
                 this.list.sort((a, b) => {
