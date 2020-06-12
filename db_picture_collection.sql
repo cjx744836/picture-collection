@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50720
 File Encoding         : 65001
 
-Date: 2020-06-08 23:21:47
+Date: 2020-06-13 00:53:14
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -25,6 +25,7 @@ CREATE TABLE `tb_file` (
   `filename` varchar(255) NOT NULL,
   `filesize` double unsigned NOT NULL,
   `surl` varchar(255) NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `id,sid` (`id`,`sid`) USING BTREE,
   KEY `sid` (`sid`),

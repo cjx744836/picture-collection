@@ -1,4 +1,17 @@
 const request = require('./request');
+const utils = require('./utils');
+const path = require('path');
+const fs = require('fs');
+const controller = require('./controller');
+let urls = [];
+let index = 0;
+const MAX = 100000;
+let hostMap = {};
+let regNum = /\[\d+-\d+\]/;
+let regNumV = /\[(\d+)-(\d+)\]/;
+let regCha = /\[[a-z]-[a-z]\]/i;
+let regChaV = /\[([a-z])-([a-z])\]/i;
+
 
 function parsePath(c, url) {
     let d = [];
@@ -113,9 +126,6 @@ function getImgProp(html, url, prop) {
     return parsePath(parseHTML(html, 'img', prop), url);
 }
 
-let urls = [];
-let index = 0;
-const MAX = 100000;
 
 function add(u, url) {
     if(urls.length > MAX) return;
@@ -126,7 +136,7 @@ function add(u, url) {
     });
 }
 
-function parse(delay, ops, prop, otherops) {
+function parse(delay, ops, prop, otherops, only) {
     if(index === urls.length) return process.send({over: 1});
     let url = urls[index++];
     request(url, ops, otherops).then(res => {
@@ -136,34 +146,91 @@ function parse(delay, ops, prop, otherops) {
         if(base.length) {
             res.url = new URL(base[0], res.url).href;
         }
-        add(getHref(text, res.url), new URL(res.url));
+        !only && add(getHref(text, res.url), new URL(res.url));
         imgs = imgs.concat(getImg(text, res.url));
         if(prop) {
             imgs = imgs.concat(getImgProp(text, res.url, prop));
         }
-        process.send({imgUrl: imgs, sUrl: res.url});
-        delayParse(delay, ops, prop, otherops);
+        let host = new URL(res.url).host;
+        let sid = utils.genHash(host);
+        if(!hostMap[host]) {
+            hostMap[host] = 1;
+            let dir = path.resolve(__dirname, 'img', host);
+            if(!fs.existsSync(dir)) {
+                fs.mkdirSync(dir);
+            }
+            controller.saveHost(sid, host);
+        }
+        process.send({imgUrl: imgs, sUrl: res.url, sid, dir: host});
+        delayParse(delay, ops, prop, otherops, only);
     }).catch(err => {
         if(urls.length === 1) {
             process.send({err: `${err.message}`, code: 0, url: err.url});
         } else {
             process.send({err: `[parser] - ${err.message}`, code: 1, url: err.url});
         }
-        delayParse(delay, ops, prop, otherops);
+        delayParse(delay, ops, prop, otherops, only);
     });
 }
 
-function delayParse(delay, ops, prop, otherops) {
+function delayParse(delay, ops, prop, otherops, only) {
     setTimeout(() => {
-        parse(delay, ops, prop, otherops);
+        parse(delay, ops, prop, otherops, only);
     }, delay);
 }
 
 process.on('message', arg => {
    if(!arg.url) return;
-   urls.push(arg.url);
+   if(arg.only) {
+       arg.url.split(',').forEach(url => {
+          parseURL(url.trim());
+       });
+   } else {
+       urls.push(arg.url);
+   }
    let ops = {headers: {}};
    if(arg.cookie) ops.headers.cookie = arg.cookie;
    if(arg.openReferer) ops.headers.referer = arg.referer;
-   parse(arg.delay, ops, arg.prop, arg.otherops);
+   parse(arg.delay, ops, arg.prop, arg.otherops, arg.only);
 });
+
+
+function parseURL(url) {
+    if(!url) return;
+    try {
+        new URL(url);
+    } catch (e) {
+        return process.send({err: `[parser] - 不是一个有效的网址，缺少http://或者域名中使用了类似于[1-9]的范围选择符`, url: url});
+    }
+    if(regNum.test(url) || regCha.test(url)) {
+        urls = urls.concat(genURL(url));
+    } else {
+        urls.push(url);
+    }
+}
+
+function genURL(url) {
+    let m, i, l, c = [], b = [], n, char = false;
+    if(regNum.test(url)) {
+        m = url.match(regNumV);
+        i = Number(m[1]);
+        l = Number(m[2]);
+    } else if(regCha.test(url)) {
+        m = url.match(regChaV);
+        i = m[1].charCodeAt(0);
+        l = m[2].charCodeAt(0);
+        char = true;
+    }
+    if(m) {
+        n = m[0].length;
+        for(; i <= l; i++) {
+            b.push(url.substr(0, m.index) + (char ? String.fromCharCode(i) : i) + url.substr(m.index + n));
+        }
+        b.forEach(d => {
+            c = c.concat(genURL(d));
+        });
+    } else {
+        c.push(url);
+    }
+    return c;
+}

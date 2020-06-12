@@ -67,7 +67,8 @@ let app = new Vue({
         reqTimeout: 5000,
         resTimeout: 60000,
         retry: 3,
-        loadingVisible: false
+        loadingVisible: false,
+        only: '2'
     },
     watch: {
         m_edit() {
@@ -186,6 +187,19 @@ let app = new Vue({
             for(let i = 0; i < this.count; i++) {
                 this.arr.push([]);
             }
+        },
+        sortByTime() {
+            if(this.m_sort) {
+                this.list.sort((a, b) => {
+                    return a.create_time - b.create_time;
+                });
+            } else {
+                this.list.sort((a, b) => {
+                    return b.create_time - a.create_time;
+                });
+            }
+            this.genArr();
+            this.m_sort = !this.m_sort;
         },
         sort() {
             if(this.m_sort) {
@@ -402,7 +416,8 @@ let app = new Vue({
                 referer: this.referer === '1' ? 1 : 0,
                 cookie: this.cookie,
                 reqTimeout: this.reqTimeout,
-                resTimeout: this.resTimeout
+                resTimeout: this.resTimeout,
+                only: this.only === '1' ? 1 : 0
             });
             this.disabled = true;
             fetch('/clearLogs');

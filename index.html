@@ -13,13 +13,14 @@
         <div class="ops" :class="{full:isFullScreen, top:isTop}" @mouseleave="isTop=false" ref="ops">
             <span v-title="'参数设置'" class="icon-set iconfont" @click="m_set_visible=true"></span>
             <span>布局<i v-title="'图片布局方式'">?</i></span><select v-model="layoutR" @keydown.prevent><option v-for="k in layoutListR" :value="k.value">{{k.name}}</option></select><select v-model="layoutC" @keydown.prevent><option v-for="k in layoutListC" :value="k.value">{{k.name}}</option></select>
-            <span>图片网站<i v-title="'需要采集图片的网站地址'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
+            <span>图片网址<i v-title="'如果开启了采集指定网址，将支持数字和字母范围写法,比如[1-90]和[a-z]范围写法不能出现空格且字母只支持单个不支持[aa-zz]，这对于采集连续性的网址很有用，多个地址用英文逗号隔开'">?</i></span><input type="text" v-model.trim="url" @click="selAll" @keydown.stop>
             <span v-if="ready">
                 <button @click="start" v-if="!disabled&&!m_edit">开始</button>
                 <span v-if="disabled" class="loading"></span>
                 <button v-if="disabled" @click="stop" :disabled="m_stop" :class="{disabled:m_stop}">停止</button>
                 <button @click="clear" v-if="!disabled&&!m_edit"><span class="icon-load iconfont"></span>删除/加载图片</button>
                 <button @click="sort"><span class="icon-sort iconfont"></span>大小排序</button>
+                <button @click="sortByTime"><span class="icon-sort iconfont"></span>时间排序</button>
                 <button @click="m_edit=!m_edit"><span class="iconfont icon-edit"></span>{{!m_edit?'编辑':'退出编辑'}}</button>
                 <button @click="delSelImage" v-if="m_edit"><span class="iconfont icon-delete"></span>删除图片</button>
                 <button @click="selsImage" v-if="m_edit">全选</button>
@@ -32,6 +33,9 @@
             <div class="set-dlg" v-if="m_set_visible">
                 <div class="set-dlg-bg" @click="m_set_visible=false"></div>
                 <div class="set-dlg-container" @keydown.stop>
+                    <div class="set-item">
+                        <span>采集指定网址<i v-title="'开启这个功能，将只会采集输入网址下的图片，多个网址英文逗号隔开，关闭这个功能，将采集这个网址下同域名的所有网址的图片，只支持输入一个网址'">?</i></span><select v-model="only" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
+                    </div>
                     <div class="set-item">
                         <span>图片下载进程<i v-title="'适当提高数值，会提升抓取效率，不是越高越好'">?</i></span><input type="text" v-model.number="process" @click="selAll">
                     </div>

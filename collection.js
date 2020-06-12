@@ -28,16 +28,16 @@ process.on('message', arg => {
         if(res.data.length < arg.size) return process.send({err: `[colloection] - [${arg.index}] - 图片大小过滤`, url: res.url});
         let hash = utils.genHash(res.data);
         let ext = getType(res.type);
-        fs.writeFileSync(path.resolve(__dirname, 'img', arg.dir, hash + ext), res.data);
+        fs.writeFileSync(path.resolve(__dirname, 'img', arg.url.dir, hash + ext), res.data);
            let data = {
-               sid: arg.sid,
+               sid: arg.url.sid,
                id: hash,
                filesize: res.data.length,
                filename: hash + ext,
                surl: arg.url.sUrl
            };
        controller.saveFile(data);
-        process.send({hash: hash, imgUrl: `/${arg.dir}/${hash}${ext}`, sUrl: arg.url.sUrl, size: res.data.length});
+        process.send({hash: hash, imgUrl: `/${arg.url.dir}/${hash}${ext}`, sUrl: arg.url.sUrl, size: res.data.length, create_time: Date.now()});
    }).catch(err => {
       process.send({err: `[colloection] - [${arg.index}] - ${err.message}`, url: err.url});
    });

@@ -12,7 +12,6 @@ let delay = 0;
 let index = 0;
 const MAX = 100000;
 let one = false;
-let sid = 0;
 let cookie = '';
 let otherops = {
         resTimeout: 60000,
@@ -48,15 +47,9 @@ ws.createServer(connection => {
             otherops.resTimeout = Number(o.resTimeout) || 60000;
             otherops.retry = Number(o.retry) || 3;
             let url = new URL(o.url);
-            let dir = path.resolve(__dirname, 'img', url.host);
-            sid = utils.genHash(url.host);
-            if(!fs.existsSync(dir)) {
-                fs.mkdirSync(dir);
-            }
-            controller.saveHost(sid, url.host);
-            createParser(o.url, o.prop, connection, o.referer, url.protocol + '//' + url.hostname);
+            createParser(o.url, o.prop, connection, o.referer, url.protocol + '//' + url.hostname, o.only);
             for(let i = 0; i < max_process; i++) {
-                createImageCollection(connection, url.protocol + '//' + url.hostname, i, o.referer, url.host);
+                createImageCollection(connection, url.protocol + '//' + url.hostname, i, o.referer);
             }
         }
     });
@@ -70,9 +63,9 @@ function reset() {
     index = 0;
 }
 
-function createParser(url, prop, connection, openReferer, referer) {
+function createParser(url, prop, connection, openReferer, referer, only) {
     let child = fork('./parser.js', {windowsHide: true});
-    child.send({url, delay, prop, cookie, otherops, openReferer, referer});
+    child.send({url, delay, prop, cookie, otherops, openReferer, referer, only});
     childManager.add(child);
     child.once('kill', () => {
         controller.saveLog(`[parser] - 进程退出`);
@@ -95,7 +88,7 @@ function createParser(url, prop, connection, openReferer, referer) {
         controller.saveLog(`[parser] - 解析图片${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
-                imageURL.length < MAX && imageURL.push({imgUrl: d, sUrl: arg.sUrl});
+                imageURL.length < MAX && imageURL.push({imgUrl: d, sUrl: arg.sUrl, dir: arg.dir, sid: arg.sid});
             }
         });
     });
@@ -107,7 +100,7 @@ function getImageURL() {
     return '';
 }
 
-function createImageCollection(connection, referer, i, openReferer, dir) {
+function createImageCollection(connection, referer, i, openReferer) {
     let child = fork('./collection.js', {windowsHide: true});
     let killed = false, over = false;
     childManager.add(child);
@@ -131,7 +124,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
             }
             controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         } else {
-            connection.sendText(JSON.stringify({imgUrl: arg.imgUrl, sUrl: arg.sUrl, size: arg.size, id: arg.hash}));
+            connection.sendText(JSON.stringify({imgUrl: arg.imgUrl, sUrl: arg.sUrl, size: arg.size, id: arg.hash, create_time: arg.create_time}));
         }
         delaySend(delay);
     });
@@ -141,7 +134,7 @@ function createImageCollection(connection, referer, i, openReferer, dir) {
         }, delay);
     }
     function send() {
-        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, dir, cookie, otherops, index: i, sid})
+        !killed && child.send({url: getImageURL(), size: size, referer, openReferer, cookie, otherops, index: i})
     }
     delaySend(delay + i * 1000);
 }

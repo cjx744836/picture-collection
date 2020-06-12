@@ -39,9 +39,12 @@ async function getDirs() {
 }
 
 async function getList(ids) {
-    let sql = `select id, CONCAT('/', (select name from tb_host where id=t.sid), '/', filename) imgUrl, filesize size, sUrl from tb_file t where sid in ('${ids.join('\',\'')}')`;
+    let sql = `select id, CONCAT('/', (select name from tb_host where id=t.sid), '/', filename) imgUrl, filesize size, sUrl, create_time from tb_file t where sid in ('${ids.join('\',\'')}')`;
     let data = await query(sql);
     if(data.errCode) return {list: []};
+    data.forEach(d => {
+       d.create_time = new Date(d.create_time).getTime()
+    });
     return {list: data};
 }
 
