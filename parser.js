@@ -127,10 +127,10 @@ function getImgProp(html, url, prop) {
 }
 
 
-function add(u, url) {
+function add(u, host) {
     if(urls.length > MAX) return;
     u.forEach(d => {
-        if(urls.indexOf(d) === -1 && url.host === new URL(d).host) {
+        if(urls.indexOf(d) === -1 && new URL(d).host === host) {
             urls.push(d);
         }
     });
@@ -146,12 +146,19 @@ function parse(delay, ops, prop, otherops, only) {
         if(base.length) {
             res.url = new URL(base[0], res.url).href;
         }
-        !only && add(getHref(text, res.url), new URL(res.url));
+        let host = new URL(res.url).host;
+        if(!only) {
+            if(host !== new URL(url).host) {
+                process.send({err: `[parser] - 非采集指定模式下，页面跳转后域名与输入域名不同不采集`, url: res.url});
+                return delayParse(delay, ops, prop, otherops, only);
+            } else {
+                add(getHref(text, res.url), host);
+            }
+        }
         imgs = imgs.concat(getImg(text, res.url));
         if(prop) {
             imgs = imgs.concat(getImgProp(text, res.url, prop));
         }
-        let host = new URL(res.url).host;
         let sid = utils.genHash(host);
         if(!hostMap[host]) {
             hostMap[host] = 1;

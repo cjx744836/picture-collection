@@ -35,7 +35,7 @@
                 <div class="set-dlg-bg" @click="m_set_visible=false"></div>
                 <div class="set-dlg-container" @keydown.stop>
                     <div class="set-item">
-                        <span>采集指定网址<i v-title="'开启这个功能，将只会采集输入网址下的图片，多个网址英文逗号隔开，关闭这个功能，将采集这个网址下同域名的所有网址的图片，只支持输入一个网址'">?</i></span><select v-model="only" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
+                        <span>采集指定网址<i v-title="'开启这个功能，将只会采集输入网址下的图片，多个网址英文逗号隔开，关闭这个功能，将采集这个网址下同域名的所有网址的图片，只支持输入一个网址且如果网址会发生跳转导致域名不一致的时候是不会采集的'">?</i></span><select v-model="only" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
                     </div>
                     <div class="set-item">
                         <span>图片下载进程<i v-title="'适当提高数值，会提升抓取效率，不是越高越好'">?</i></span><input type="text" v-model.number="process" @click="selAll">
