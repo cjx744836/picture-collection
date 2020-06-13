@@ -16,7 +16,7 @@ function saveFile(data) {
 
 async function delFiles(ids, s) {
     let dirs = [];
-    let sql = `select name from tb_host where id in ('${ids.join()}')`;
+    let sql = `select name from tb_host where id in ('${ids.join('\',\'')}')`;
     let data = await query(sql);
     if(data.errCode) return false;
     dirs = data.map(d => path.resolve(__dirname, 'img', d.name));

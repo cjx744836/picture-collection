@@ -149,14 +149,14 @@ let app = new Vue({
                         'content-type': 'application/json'
                     }
                 }).then(res => {
-                    let data;
-                    try {
-                        data = res.json();
-                    } catch(e) {
-                        data = res.text();
-                    }
-                    data.then(res => {
-                       resolve(res);
+                    res.text().then(res => {
+                       let data;
+                        try {
+                          data = JSON.parse(res);
+                       } catch(e) {
+                           data = res;
+                       }
+                       resolve(data);
                     });
                     this.loadingVisible = false;
                 }).catch(err => {
@@ -327,8 +327,7 @@ let app = new Vue({
                 method: 'post',
                 param: JSON.stringify(data)
             }).then(res => {
-                res.text().then(res => this.$message(res));
-
+                this.$message(res);
             });
         },
         delImage() {
