@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50720
 File Encoding         : 65001
 
-Date: 2020-06-13 00:53:14
+Date: 2020-06-17 22:00:18
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -42,13 +42,4 @@ CREATE TABLE `tb_host` (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `id` (`id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Table structure for tb_logs
--- ----------------------------
-DROP TABLE IF EXISTS `tb_logs`;
-CREATE TABLE `tb_logs` (
-  `err` varchar(255) DEFAULT NULL,
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

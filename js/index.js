@@ -432,7 +432,6 @@ let app = new Vue({
                 only: this.only === '1' ? 1 : 0
             });
             this.disabled = true;
-            fetch('/clearLogs');
         },
         add(url) {
             if(this.list.some(d => d.id === url.id)) return;

@@ -1,7 +1,7 @@
 const ws = require('nodejs-websocket');
 const {fork} = require('child_process');
 const childManager = require('./childmanager');
-const controller = require('./controller');
+const log = require('./logs');
 const fs = require('fs');
 const path = require('path');
 const utils = require('./utils');
@@ -38,7 +38,7 @@ ws.createServer(connection => {
                 connection.sendText(JSON.stringify({end: 1}));
                 reset();
             });
-            controller.clearCount();
+            log.clearLogs();
             size = o.size * 1024 || 0;
             max_process = Number(o.process) || 8;
             delay = o.delay || 0;
@@ -68,12 +68,12 @@ function createParser(url, prop, connection, openReferer, referer, only) {
     child.send({url, delay, prop, cookie, otherops, openReferer, referer, only});
     childManager.add(child);
     child.once('kill', () => {
-        controller.saveLog(`[parser] - 进程退出`);
+        log.saveLog(`[parser] - 进程退出`);
         childManager.kill(child);
     });
     child.on('message', arg => {
         if(arg.over) {
-            controller.saveLog(`[parser] - 进程退出`);
+            log.saveLog(`[parser] - 进程退出`);
             childManager.kill(child);
             return childManager.over();
         }
@@ -83,9 +83,9 @@ function createParser(url, prop, connection, openReferer, referer, only) {
                     connection.sendText(JSON.stringify({err: arg.err}));
                 });
             }
-            return controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
+            return log.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         }
-        controller.saveLog(`[parser] - 解析图片${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
+        log.saveLog(`[parser] - 解析图片${arg.imgUrl.length}个 - <a href="${arg.sUrl}" target="_blank">${arg.sUrl}</a>`);
         arg.imgUrl.forEach(d => {
             if(!imageURL.some(b => b.imgUrl === d)) {
                 imageURL.length < MAX && imageURL.push({imgUrl: d, sUrl: arg.sUrl, dir: arg.dir, sid: arg.sid});
@@ -106,7 +106,7 @@ function createImageCollection(connection, referer, i, openReferer) {
     childManager.add(child);
     child.once('kill', () => {
         killed = true;
-        controller.saveLog(`[colloection] - [${i}] - 进程退出`);
+        log.saveLog(`[colloection] - [${i}] - 进程退出`);
         childManager.kill(child);
     });
     child.once('over', () => {
@@ -116,13 +116,13 @@ function createImageCollection(connection, referer, i, openReferer) {
         if(arg.err) {
             if(arg.code === 0) {
                 if(over) {
-                    controller.saveLog(`[colloection] - [${i}] - 进程退出`);
+                    log.saveLog(`[colloection] - [${i}] - 进程退出`);
                     return childManager.kill(child);
                 }
-                controller.saveLog(arg.err);
+                log.saveLog(arg.err);
                 return delaySend(5000);
             }
-            controller.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
+            log.saveLog(arg.err + ` - <a href="${arg.url}" target="_blank">${arg.url}</a>`);
         } else {
             connection.sendText(JSON.stringify({imgUrl: arg.imgUrl, sUrl: arg.sUrl, size: arg.size, id: arg.hash, create_time: arg.create_time}));
         }

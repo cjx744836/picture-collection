@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const utils = require('./utils');
 const controller = require('./controller');
+const log = require('./logs');
 const port = 6001;
 require('./socket');
 
@@ -34,7 +35,7 @@ server.post('/loadImage', async (req, res) => {
 });
 
 server.get('/logs', async (req, res) => {
-   let data = await controller.logs();
+   let data = log.getLogs();
    res.set('content-type', 'text/html');
    let html = `<ul style="font-size:14px;">`;
    data.forEach(d => {
@@ -45,7 +46,7 @@ server.get('/logs', async (req, res) => {
 });
 
 server.get('/clearLogs', (req, res) => {
-   controller.clearLogs();
+   log.clearLogs();
    res.end();
 });
 
