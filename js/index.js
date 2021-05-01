@@ -1,4 +1,9 @@
 let ws;
+let update = Viewer.prototype.update;
+Viewer.prototype.update = function() {
+    update.call(this);
+    app.sortViewer();
+};
 let app = new Vue({
     el: '.app',
     data: {
@@ -378,6 +383,16 @@ let app = new Vue({
                     this.arr[n].push(d);
                 });
             }
+        },
+        sortViewer() {
+            let r = Number(this.layoutR), c = Number(this.layoutC);
+            let imgs = new Array(this.$refs.viewer.$viewer.images.length).fill(0);
+            let images = this.$refs.viewer.$viewer.images;
+            images.forEach((d, i) => {
+                let n = (i / c | 0) + i % c * r;
+                imgs[i] = images[n];
+            })
+            this.$refs.viewer.$viewer.images = imgs;
         },
         pageTo(page, i) {
             if(page === '...') {
