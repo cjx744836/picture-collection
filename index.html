@@ -35,6 +35,9 @@
                 <div class="set-dlg-bg" @click="m_set_visible=false"></div>
                 <div class="set-dlg-container" @keydown.stop>
                     <div class="set-item">
+                        <span>路径相同<i v-title="'开启这个功能，将只会采集路径相同的网址，比如：http://test.com/file/1.html，则只会采集路径为http://test.com/file/xxx的网址'">?</i></span><select v-model="samePath" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
+                    </div>
+                    <div class="set-item">
                         <span>采集指定网址<i v-title="'开启这个功能，将只会采集输入网址下的图片，多个网址英文逗号隔开，关闭这个功能，将采集这个网址下同域名的所有网址的图片，只支持输入一个网址且如果网址会发生跳转导致域名不一致的时候是不会采集的'">?</i></span><select v-model="only" @keydown.prevent><option v-for="k in pageContent" :value="k.value">{{k.name}}</option></select>
                     </div>
                     <div class="set-item">
@@ -109,6 +112,7 @@
         <div class="page" :class="{full:isFullScreen, top:isBottom}" @mouseleave="isBottom=false" v-if="list.length">
             <span v-for="(k,i) in pageList" @click="pageTo(k,i)" :class="{active:page===k}">{{k}}</span>
             <span class="total">共{{list.length}}个</span>
+            <button @click="randPage">随机翻页</button>
         </div>
         <transition name="fade">
             <div class="req-loading" v-if="loadingVisible">

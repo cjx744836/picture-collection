@@ -68,7 +68,8 @@ let app = new Vue({
         resTimeout: 60000,
         retry: 3,
         loadingVisible: false,
-        only: '2'
+        only: '2',
+        samePath: '2',
     },
     watch: {
         m_edit() {
@@ -394,6 +395,10 @@ let app = new Vue({
             this.genArr();
             this.genPage();
         },
+        randPage() {
+            let n = (Math.random() * this.last + 1) | 0;
+            this.pageTo(n);
+        },
         genPage() {
             if (this.pager === '2') return;
             this.pageList = [];
@@ -429,7 +434,8 @@ let app = new Vue({
                 cookie: this.cookie,
                 reqTimeout: this.reqTimeout,
                 resTimeout: this.resTimeout,
-                only: this.only === '1' ? 1 : 0
+                only: this.only === '1' ? 1 : 0,
+                samePath: this.samePath === '1' ? 1 : 0
             });
             this.disabled = true;
         },

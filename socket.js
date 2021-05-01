@@ -47,7 +47,15 @@ ws.createServer(connection => {
             otherops.resTimeout = Number(o.resTimeout) || 60000;
             otherops.retry = Number(o.retry) || 3;
             let url = new URL(o.url);
-            createParser(o.url, o.prop, connection, o.referer, url.protocol + '//' + url.hostname, o.only);
+            let obj = {
+                url: o.url,
+                prop: o.prop,
+                openReferer: o.referer,
+                referer: url.protocol + '//' + url.hostname,
+                only: o.only,
+                samePath: o.samePath
+            };
+            createParser(connection, obj);
             for(let i = 0; i < max_process; i++) {
                 createImageCollection(connection, url.protocol + '//' + url.hostname, i, o.referer);
             }
@@ -63,9 +71,14 @@ function reset() {
     index = 0;
 }
 
-function createParser(url, prop, connection, openReferer, referer, only) {
+function createParser(connection, ops) {
     let child = fork('./parser.js', {windowsHide: true});
-    child.send({url, delay, prop, cookie, otherops, openReferer, referer, only});
+    let obj = Object.assign({
+        delay,
+        cookie,
+        otherops,
+    }, ops);
+    child.send(obj);
     childManager.add(child);
     child.once('kill', () => {
         log.saveLog(`[parser] - 进程退出`);

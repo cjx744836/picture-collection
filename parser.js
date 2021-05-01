@@ -11,6 +11,7 @@ let regNum = /\[\d+-\d+\]/;
 let regNumV = /\[(\d+)-(\d+)\]/;
 let regCha = /\[[a-z]-[a-z]\]/i;
 let regChaV = /\[([a-z])-([a-z])\]/i;
+let samePath = 0;
 
 
 function parsePath(c, url) {
@@ -126,11 +127,17 @@ function getImgProp(html, url, prop) {
     return parsePath(parseHTML(html, 'img', prop), url);
 }
 
+function isSamePath(u1, u2) {
+    u1 = u1.replace(/[^/]+$/, '');
+    u2 = u2.replace(/[^/]+$/, '');
+    return u1 === u2;
+}
 
 function add(u, host) {
     if(urls.length > MAX) return;
     u.forEach(d => {
         if(urls.indexOf(d) === -1 && new URL(d).host === host) {
+            if(samePath && !isSamePath(d, urls[0])) return;
             urls.push(d);
         }
     });
@@ -195,6 +202,7 @@ process.on('message', arg => {
    } else {
        urls.push(arg.url);
    }
+   samePath = arg.samePath;
    let ops = {headers: {}};
    if(arg.cookie) ops.headers.cookie = arg.cookie;
    if(arg.openReferer) ops.headers.referer = arg.referer;
