@@ -394,3 +394,16 @@ button .iconfont {
 .fade-enter, .fade-leave-to {
     opacity: 0;
 }
+.pick-inner {
+    background: #2e82ca;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 5px;
+    color: #fff;
+    font-size: 12px;
+    display: none;
+}
+.img-inner:hover .pick-inner {
+    display: block;
+}

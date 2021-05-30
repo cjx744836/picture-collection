@@ -81,6 +81,7 @@
                     <div v-if="m_edit" class="edit" @click.stop="editAll(p.id)" :class="{active:selEdit[p.id]}">
                         <span @click.stop="dels(p.id)" class="iconfont icon-delete"></span>
                     </div>
+                    <div class="pick-inner" @click="pickImage(p.imgUrl)">放入可下载</div>
                 </div>
             </div>
         </div>

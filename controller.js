@@ -1,6 +1,7 @@
 const query = require('./sql');
 const utils = require('./utils');
 const path = require('path');
+const fs = require('fs')
 
 function saveHost(id, host) {
     let sql = `insert into tb_host (id, name) value('${id}', '${host}')`;
@@ -59,6 +60,14 @@ async function delFile(ids) {
     return true;
 }
 
+async function copyFile(srcPath, destPath) {
+    return new Promise((resolve) => {
+        fs.copyFile(srcPath, destPath, (err) => {
+            err ? resolve(false) : resolve(true)
+        });
+    })
+}
+
 module.exports = {
-    saveHost, saveFile, getDirs, delFiles, getList, delFile
+    saveHost, saveFile, getDirs, delFiles, getList, delFile, copyFile
 };

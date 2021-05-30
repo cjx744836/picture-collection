@@ -171,6 +171,17 @@ let app = new Vue({
                 });
             });
         },
+        pickImage(v) {
+            this.request({
+                method: 'post',
+                url: '/pick',
+                param: JSON.stringify({file: v})
+            }).then(r => {
+                r.code === 0 ? this.$message('success') : this.$message('failed');
+            }).catch(() => {
+                this.$message('failed')
+            })
+        },
         scrollTop(m) {
             document.documentElement.scroll(0, document.documentElement.scrollTop + m);
         },

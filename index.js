@@ -50,6 +50,19 @@ server.get('/clearLogs', (req, res) => {
    res.end();
 });
 
+server.post('/pick', async (req, res) => {
+    if(!req.body.file) return res.send({code: 1000})
+    let srcPath = path.join(__dirname + '/img/' + req.body.file);
+    let file = req.body.file;
+    file = file.split('/');
+    file.shift();
+    file.shift();
+    file = file.join('/')
+    let destPath = path.join(__dirname, '../scandir/imgs/' + file)
+    let d = await controller.copyFile(srcPath, destPath);
+    d ? res.send({code: 0}) : res.send({code: 1000})
+})
+
 server.post('/del', async (req, res) => {
    if(req.body.ids) {
        let data = await controller.delFile(req.body.ids);
