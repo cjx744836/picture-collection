@@ -24,6 +24,15 @@ function parsePath(c, url) {
 }
 
 function parseHTML(html, tag, attr) {
+    let b, c = [];
+    let reg = new RegExp(`<${tag}\\s+.*?${attr}\\s*=\\s*(\'|")?([^\'"]+)(\'|")?(?:\\s*|\\/|>)`, 'gim');
+    while(b = reg.exec(html)) {
+        c.push(b[2]);
+    }
+    return c;
+}
+
+/*function parseHTML(html, tag, attr) {
     let index = 0, s = 0, str = '', c = [], len = html.length, char;
     function put() {
         c.push(str);
@@ -109,7 +118,7 @@ function parseHTML(html, tag, attr) {
         }
     }
     return c;
-}
+}*/
 
 function getBase(html) {
     return parseHTML(html, 'base', 'href');
